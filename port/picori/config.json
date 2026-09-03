@@ -87,6 +87,12 @@
         ],
         "state_prev_slot": [
             "SDLK:0x4000004b"
+        ],
+        "state_save_new_slot": [
+            "SDLK:0x4000004a"
+        ],
+        "fast_forward": [
+            "SDLK:0x00000009"
         ]
     },
     "color_correction": false,

@@ -3,24 +3,38 @@
 # this SDL3 build finds no gamepad on it either, so gptokeyb translates the pad
 # into a virtual keyboard and everything below mirrors config.json "bindings".
 #
-# Because SDL sees no pad, the port's Controls tab can only bind *keys* -- and
-# every key the SP can send is already spoken for by gameplay. The hk_hotkey
-# layer below is where the spare ones come from: hold SELECT and the four
-# buttons in [controls:hk_hotkey] send save-state keys instead of their normal
-# ones. The launcher passes -H back to nominate SELECT as that hotkey.
-# SELECT is the only non-gameplay face button on this device (START pauses,
-# MENU is the port's settings overlay), which is why it draws the job.
+# The names on the left are SDL's, and on this device they do NOT match the
+# labels on the case -- muOS-Keys reports the buttons under borrowed key codes.
+# Decoded from /proc/bus/input/devices against the launcher's
+# SDL_GAMECONTROLLERCONFIG:
+#
+#   case says   evdev key     SDL name        line below
+#   SELECT      BTN_TL        back            back
+#   START       BTN_TR        start           start
+#   MENU        BTN_TL2       guide           guide
+#   L2          BTN_SELECT    lefttrigger     l2
+#   R2          BTN_START     righttrigger    r2
+#
+# There is no BTN_TR2, BTN_MODE or BTN_THUMBL/R in the device's key bitmap,
+# so l3/r3 are dead here -- the SP has no sticks and no spare button beyond
+# what is listed.
 
 [controls]
 a = x
 b = z
 x = c
-y = v
+y = f6
 
 l1 = a
 r1 = s
-l2 = q
-r2 = e
+
+# L2 = quick-save to a new slot, R2 = fast-forward (hold), Y = load the
+# selected slot. These were the port's soft-slot buttons (keys q/v/e) but no
+# tmc.softslots sidecar has ever been written, so nothing was ever assigned
+# to them. X stays on c and remains available if extra item slots are wanted.
+l2 = home
+r2 = tab
+
 l3 = \"
 r3 = \"
 
@@ -42,27 +56,26 @@ right_analog_down = \"
 right_analog_left = \"
 right_analog_right = \"
 
-# Held-SELECT layer -- save states. The keys match config.json's default
-# state_save / state_load / state_next_slot / state_prev_slot bindings, so
-# rebinding them in F8 -> Controls means changing them here too (or just
-# rebinding to whatever these already send).
+# Held-SELECT layer: walks the selected save-state slot without opening the
+# menu. Only the rare action needs a modifier -- save, load and fast-forward
+# are single presses above. The slot picker in MENU -> Saves shows a preview
+# thumbnail and timestamp per slot, which is the better way to pick one.
+#
 # A key left out of a layer is *unbound* while the hotkey is held, not
-# inherited -- `gptokeyb2 -d` prints it empty. So everything that is not one
-# of the four overrides is repeated verbatim, or holding SELECT would also
-# mute the shoulder buttons, START and the MENU overlay.
+# inherited from [controls] -- `gptokeyb2 -d` prints it empty. So everything
+# that is not one of the two overrides is repeated verbatim, or holding SELECT
+# would also mute the face buttons, START and the MENU overlay.
 [controls:hk_hotkey]
-a = f5             # SELECT+A     save state to the selected slot
-b = f6             # SELECT+B     load state from the selected slot
-right = pagedown   # SELECT+RIGHT next slot
-left = pageup      # SELECT+LEFT  previous slot
+l2 = pageup     # SELECT+L2  previous slot
+r2 = pagedown   # SELECT+R2  next slot
 
+a = x
+b = z
 x = c
-y = v
+y = f6
 
 l1 = a
 r1 = s
-l2 = q
-r2 = e
 l3 = \"
 r3 = \"
 
@@ -71,3 +84,5 @@ guide = f8
 
 up = up
 down = down
+left = left
+right = right

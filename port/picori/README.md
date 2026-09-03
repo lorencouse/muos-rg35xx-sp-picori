@@ -36,30 +36,39 @@ because weston's libinput refuses muOS-Keys outright. The map mirrors
 | B        | B           | Item / cancel                            |
 | L1       | L           | GBA L                                    |
 | R1       | R           | GBA R                                    |
-| X, Y     | soft slots  | Extra item slots, assigned in the pause menu |
-| L2, R2   | soft slots  | As above                                 |
+| X        | soft slot   | Extra item slot, assigned in the pause menu |
+| Y, L2, R2 | save states / fast-forward | See below               |
 | D-pad    | D-pad       |                                          |
 | START    | Start       | Pause menu                               |
 | SELECT   | Select      | Also the save-state modifier — see below |
 | MENU     | F8          | Port settings overlay                    |
 
-**Save states** — hold **SELECT**:
+### Save states and fast-forward
 
-| Buttons | Action |
+| Button | Action |
 |---|---|
-| SELECT + A | Save state to the selected slot |
-| SELECT + B | Load state from the selected slot |
-| SELECT + RIGHT | Next slot |
-| SELECT + LEFT | Previous slot |
+| **L2** | Quick-save to a new slot |
+| **R2** (hold) | Fast-forward |
+| **Y** | Load the selected slot |
+| SELECT + L2 / R2 | Previous / next slot |
 
-There are five manual slots plus a three-deep autosave ring. Pick which slot
-the buttons act on in the settings overlay under **Saves** — that tab also has
-per-slot Save/Load buttons and timestamps, so you never have to guess what is
-in one. The choice is remembered between sessions.
+**L2 counts up.** Each press saves to the next slot, so a run of presses
+leaves a rolling history instead of overwriting one state. There are **20**
+manual slots; after slot 20 it wraps back to slot 1 and starts overwriting the
+oldest.
+
+**Pick what to load in the settings overlay under Saves.** Every slot shows a
+**preview thumbnail** of the moment it was taken plus a timestamp, so you can
+see which one is the fight you wanted rather than guessing from a date. The
+selected slot is what **Y** loads, and the choice is remembered between
+sessions. That tab also has per-slot Save/Load buttons and a three-deep
+autosave ring below the manual slots.
 
 Save states are separate from the game's own save file: they capture exactly
 where you are standing, mid-cutscene included. `tmc.sav` is still what the
 in-game save menu writes.
+
+X is unused and stays free for the port's optional extra item slots.
 
 If MENU does not open the settings overlay (muOS may claim the button before
 the port sees it), use the on-screen **"L"** prompt on the file-select screen,
@@ -106,6 +115,7 @@ Everything the port writes stays inside `ports/picori/`:
 |--------------------|-----------------------------------------------|
 | `tmc.sav`          | In-game save (EEPROM)                         |
 | `state_*.bin`      | Save states (`state_auto_*` are the autosave ring) |
+| `state_*.thumb`    | Preview thumbnails for the slot picker        |
 | `config.json`      | Your settings                                 |
 | `assets/`, `assets_src/`, `rom_data/` | Generated from your ROM on first launch |
 

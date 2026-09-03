@@ -189,46 +189,68 @@ worst case is bounded rather than lost, but a save-on-`SIGTERM` handler in
 
 ## Save states
 
-Five manual slots plus a three-deep auto-save ring, all in **MENU → Saves**.
-One manual slot is *selected*; the save-state hotkeys act on it, and the
+Twenty manual slots plus a three-deep auto-save ring, all in **MENU → Saves**.
+One manual slot is *selected*; that is what the load button restores, and the
 selection persists in `config.json` as `savestate_slot`.
 
-| Buttons | Action |
+| Button | Action |
 |---|---|
-| **SELECT + A** | Save state to the selected slot |
-| **SELECT + B** | Load state from the selected slot |
-| **SELECT + RIGHT** | Next slot |
-| **SELECT + LEFT** | Previous slot |
+| **L2** | Quick-save to a new slot (counts up, wraps at 20) |
+| **R2** (hold) | Fast-forward |
+| **Y** | Load the selected slot |
+| **SELECT + L2 / R2** | Previous / next slot |
 
-Getting there took two pieces, one in the binary and one here.
+The picker shows a **preview thumbnail** and a timestamp per slot. Twenty
+identical dates would tell you nothing about which state is the fight you
+wanted, so each save captures the frame that was on screen.
 
-**In the fork:** save states existed but every route to them was a hard-wired
-keyboard case — F5/F6 quick, F1-F4 direct. There is no keyboard on this
-device, so the only way in was the F8 menu, and the Controls tab, which
-rebinds every other action, had nothing to offer. Four bindable actions now
-exist (`state_save`, `state_load`, `state_next_slot`, `state_prev_slot`) and
-act on the selected slot rather than a fixed one — which is what lets four
-binds reach five slots. A handheld does not have ten spare buttons.
+### What had to change in the fork
 
-**Here:** SDL sees no gamepad on this device (weston/libinput refuses
-muOS-Keys, so gptokeyb hands the port a virtual keyboard instead). The port
-can therefore only bind *keys* — and every key the SP can send is already
-gameplay. The spare keys come from a gptokeyb hotkey layer:
-`[controls:hk_hotkey]` in `tmc_pc.gptk`, activated by `-H back` on the
-gptokeyb command line, remaps four buttons while SELECT is held.
+Save states existed but every route to them was a hard-wired keyboard case —
+F5/F6 quick, F1-F4 direct. There is no keyboard on this device, so the only
+way in was the F8 menu, and the Controls tab, which rebinds every other
+action, had nothing to offer. Fast-forward was TAB-only for the same reason.
+
+Six bindable actions now exist — `state_save`, `state_save_new_slot`,
+`state_load`, `state_next_slot`, `state_prev_slot` and `fast_forward` — acting
+on a selected slot rather than a fixed one, so a handful of binds reach all
+twenty. Thumbnails ride in a `state_N.thumb` sidecar rather than inside the
+state file, deliberately: bumping the state format version rejects every
+existing save on disk, and losing someone's states to gain a preview is a bad
+trade. A state with no sidecar simply shows no picture.
+
+### What had to change here
+
+SDL sees no gamepad on this device (weston/libinput refuses muOS-Keys, so
+gptokeyb hands the port a virtual keyboard). The port can therefore only bind
+*keys* — and the SP's buttons send a fixed set of them. Two facts made the
+layout work:
+
+- **X, Y, L2 and R2 were free.** They are the port's soft-slot buttons, but no
+  `tmc.softslots` sidecar has ever been written, so nothing was assigned to
+  them. Y, L2 and R2 now carry the save-state and fast-forward keys; X stays
+  free for soft slots.
+- **The button names are scrambled.** muOS-Keys reports the pad under borrowed
+  key codes, so SDL's `l2`/`r2` are the case's L2/R2 but SDL's `back`/`start`/
+  `guide` are SELECT/START/MENU. Decoded from `/proc/bus/input/devices`
+  against the launcher's `SDL_GAMECONTROLLERCONFIG`; the table is in
+  `tmc_pc.gptk`. There is no `BTN_TR2`, `BTN_MODE` or `BTN_THUMBL/R` in the
+  key bitmap at all — the SP has no sticks and no spare button beyond those.
+
+Slot cycling needs a modifier, and the spare keys for it come from a gptokeyb
+hotkey layer: `[controls:hk_hotkey]`, activated by `-H back` on the gptokeyb
+command line, remaps L2/R2 while SELECT is held.
 
 Two things worth knowing if you edit that layer:
 
 - A key **left out of a layer is unbound while the hotkey is held**, not
   inherited from `[controls]`. `gptokeyb2 -d` prints it empty. Everything
-  that is not one of the four overrides is therefore repeated verbatim, or
-  holding SELECT would also mute the shoulder buttons, START and the MENU
-  overlay.
-- SELECT draws the job because it is the only non-gameplay face button on
-  this device: START pauses and MENU is the settings overlay, so neither can
-  be spent on a modifier.
+  that is not an override is therefore repeated verbatim, or holding SELECT
+  would also mute the face buttons, START and the MENU overlay.
+- `hotkey =` is **not** a `[config]` key. It is the `-H` command-line option;
+  the parser prints "unknown global hotkey" and carries on without it.
 
-The auto ring (slots 6-8) is loadable from the menu but not selectable — it
+The auto ring (slots 21-23) is loadable from the menu but not selectable — it
 overwrites itself on a schedule, so a hand-made state parked there would
 silently vanish.
 
@@ -276,9 +298,9 @@ Tier A: installable. Not yet submitted to PortMaster.
 - [x] Shutdown `SIGABRT` fixed — `cleanup()` reaps `tmc_pc` before tearing
       down weston, so quitting no longer aborts inside libX11's IO error
       handler or writes a `bugreport_*` bundle (see **Shutdown**)
-- [x] Save-state management: five manual slots + auto ring, selectable in
-      **MENU → Saves**, driven by SELECT+A/B/LEFT/RIGHT through a gptokeyb
-      hotkey layer (see **Save states**)
+- [x] Save-state management: 20 manual slots + auto ring with preview
+      thumbnails and timestamps in **MENU → Saves**, driven by L2 (save to a
+      new slot), Y (load) and R2 (fast-forward) (see **Save states**)
 - [ ] PortMaster submission → **Multiverse**
       ([PortsMaster-MV/PortMaster-MV-New](https://github.com/PortsMaster-MV/PortMaster-MV-New)),
       not the main repo: every Nintendo-decomp port (Ship of Harkinian,
