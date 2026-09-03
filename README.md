@@ -415,18 +415,53 @@ Three things gated that, in order of how many devices each one costs.
 **1. The runtime ABI floor.** The single biggest one, and it is decided
 entirely by the build container: nothing else matters if the loader refuses
 the binary. The fork now links `-static-libstdc++ -static-libgcc` on Linux
-(`xmake.lua`), which removes the `GLIBCXX_3.4.30` requirement outright, and
-builds its aarch64 leg inside `debian:bullseye` (glibc 2.31) rather than on
-`ubuntu-22.04-arm` (2.35). bullseye's stock GCC 10 is enough — the only
-C++20 in the tree is `<span>` and `<numbers>`, so no LLVM backport is
-needed. CI gates the result: `_build.yaml`'s "Report the runtime ABI floor"
-step reads the produced ELF and fails the build if it needs anything above
-`matrix.glibc_max`, so the floor cannot drift back up unnoticed.
+(`xmake.lua`) and builds its aarch64 leg inside `debian:bullseye` (glibc
+2.31) rather than on `ubuntu-22.04-arm` (2.35). bullseye's stock GCC 10 is
+enough — the only C++20 in the tree is `<span>` and `<numbers>`, so no LLVM
+backport is needed.
+
+Measured, by the CI step against the ELF it just produced:
+
+| | shipped `v0.8.3-sp3` | bullseye container |
+|---|---|---|
+| glibc | `GLIBC_2.34` | **`GLIBC_2.29`** |
+| libstdc++ | `GLIBCXX_3.4.30` | **none (static)** |
+
+2.29, not the 2.31 the container could have permitted — the code simply
+never reaches for anything newer. Against a catalogue whose highest
+`min_glibc` is 2.32, that clears every entry.
+
+Getting there turned up two link bugs that a modern-only build matrix
+could not have surfaced, both of which would have broken an old-glibc
+device on their own, independently of the libstdc++ problem:
+
+- `shm_open`/`shm_unlink` (`port_shm_framebuffer.c`) only moved from
+  `librt` into libc in **2.34**, so nothing had ever needed `-lrt`.
+- `pthread_create` (`std::thread`, in the extractor's `ParallelFor`) moved
+  in the same release, so nothing had needed `-lpthread` either.
+
+Both now come from `add_linux_posix_syslinks()` in `xmake.lua`, and both
+are correct on every glibc — the libraries survive as stubs after 2.34.
+
+CI gates the result. `_build.yaml`'s "Report the runtime ABI floor" step
+reads the produced ELF and fails the build if it needs anything above
+`matrix.glibc_max`, or if a `GLIBCXX_`/`CXXABI_` reference reappears
+(which would mean `-static-libstdc++` had stopped reaching the link). The
+floor cannot drift back up unnoticed.
 
 `libgomp.so.1` is still a dynamic dependency (the OpenMP scanline workers)
 and is *not* covered by those flags. It is present on muOS; whether every
-target CFW ships it is unverified. The ABI step prints the `NEEDED` list on
-every build, so this stays visible.
+target CFW ships it is unverified. The step prints `NEEDED` on every build,
+so this stays visible.
+
+Two workflow bugs were fixed along the way that were never about the
+container, both worth knowing about because they made good builds look
+broken. The SDL3 audio gate ran `strings "$BIN" | grep -qx "$backend"`
+under `bash -e -o pipefail`: `grep -q` exits on match, SIGPIPEs `strings`,
+and the pipeline returns 141 **on success**, which pipefail reads as
+failure. It survived for years on the hosted runners because whether
+`strings` still had output buffered when grep quit is a timing accident.
+Both that gate and the ABI step now dump to a file and read the file.
 
 **2. The panel.** `config.json`'s `aspect_mode` and `internal_scale` were
 tuned for one 4:3 640x480 screen. The launcher now derives them from the
@@ -518,11 +553,15 @@ Tier A: installable. Not yet submitted to PortMaster.
       first launch; a generated `weston.ini` that is not tied to one output
       name; the PipeWire path taken only where a graph answers. Covered by
       20 new checks in `tools/test-launcher.sh` (see **Device support**)
-- [ ] Rebuild and retag the fork from the bullseye container, then update
-      `build.sh`'s `TMC_TAG`/`TMC_SHA256` and drop `port.json`'s `min_glibc`
-      from 2.34 to whatever the ABI step reports. **The binary shipped today
-      is still the 2.34 one** — none of the above widens the device list
-      until that retag happens
+- [x] Fork CI builds the aarch64 leg against glibc 2.31 and the ABI gate
+      passes: the produced binary needs **`GLIBC_2.29`** and no libstdc++
+      at all (run
+      [33807524582](https://github.com/lorencouse/tmc/actions/runs/33807524582),
+      branch `portmaster-abi-floor`)
+- [ ] Retag the fork from that build, then update `build.sh`'s `TMC_TAG`
+      /`TMC_SHA256` and drop `port.json`'s `min_glibc` from 2.34 to 2.29.
+      **The binary shipped today is still the 2.34 one** — none of the
+      above widens the device list until that retag happens
 - [ ] Confirm on one non-SP device: input doubling where SDL sees a real
       gamepad, and whether the RK3326 tier needs different shipped defaults
 - [ ] PortMaster submission → **Multiverse**
