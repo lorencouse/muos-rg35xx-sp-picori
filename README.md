@@ -96,7 +96,63 @@ The cost, measured in real decoupled play on the same scene:
 The X socket has no MIT-SHM, so the whole window is copied every frame and the
 transfer dominates — which is why pixel-perfect saves less than its pixel count
 suggests (15.4 vs 19.1 ms on the bench). **Game speed is unaffected either way**;
-only the render cadence moves.
+only the render cadence moves. Those `fps` figures are pre-v1.2.0; see below.
+
+## Frame rate
+
+The port now holds **60 fps**. It used to run at 30, and both halves of that
+were self-inflicted:
+
+1. **`frame_time_ns` was 33333333** — a 30 fps render cadence, written into the
+   shipped `config.json`. Under decoupled pacing this caps only the render
+   grid, so the game was always *ticking* at 60; it just drew every other tick.
+2. **Raising the cap alone made it worse, not better** (~14 fps). The decoupled
+   pacer only presents when `now + presentCostEMA <= tickDeadline`. A present
+   cost ~16.5 ms against a 16.67 ms tick window, so the fit test failed every
+   time and frames only went out on the 100 ms starvation override. Skipped
+   presents keep the EMA high, which skips more — a death spiral.
+
+The fix is `internal_scale: 2`, which is counter-intuitive: it does *more*
+work and runs faster. SDL's software renderer scales 240x160 -> 640x480 (2.67x)
+far more slowly per output pixel than 480x320 -> 640x480 (1.33x). Pre-expanding
+2x in the port's own tight loop costs ~3.7 ms of render but takes the whole
+present from 16.5 ms to ~8.7 ms — comfortably inside the tick window, so every
+tick presents.
+
+Measured on device, 45-90 s runs, governor pinned, frontend stopped:
+
+| `frame_time_ns` | `internal_scale` | `present`/present | presents per 120 ticks | fps |
+|---|---|---|---|---|
+| 33333333 (30) | 1 | 16.5 ms | 60 | 30.0 |
+| 16666667 (60) | 1 | 16.5 ms | 29 | ~14 |
+| 20000000 (50) | 1 | 16.3 ms | 36 | ~18 |
+| 16666667 (60) | 4 | 20+ ms | 18 | ~10 |
+| **16666667 (60)** | **2** | **8.7 ms** | **120** | **60.00** |
+
+Over a 90 s run: 82 of 85 samples at exactly 60.00 fps, 2 at 59.02, 1 at 58.03,
+zero audio underruns, ~40% of the four cores total (game 21%, weston 13%,
+Xwayland 9%).
+
+**The prescale is pixel-identical, not a quality trade.** Both paths are
+nearest, and `floor(floor(x*480/640)/2) == floor(x*240/640)` for all x because
+`floor(floor(y)/n) == floor(y/n)` for positive integer n; vertically both
+reduce to `floor(y/3)`. Pixel-perfect becomes a straight 1:1 blit. `4` is past
+the sweet spot — the 960x640 intermediate costs more than the cheaper blit
+saves.
+
+Dead ends, ruled out by measurement rather than guessed at:
+
+- **Native Wayland** (drop Xwayland): the shipped SDL3 prints
+  `SDL compiled video drivers: x11 kmsdrm offscreen dummy evdev` — no Wayland
+  driver is built in, so this needs a fork rebuild.
+- **MIT-SHM**: `ipcs -m` says *kernel not configured for shared memory* and
+  there is no `/proc/sysvipc`. Genuinely impossible, not a config miss.
+- **Hardware blit** via westonwrap's `crusty_x11egl` gfx mode: EGL comes up
+  (`GL version: OpenGL ES 3.2`) but SDL still reports
+  `SDL_Renderer driver = software` and `SDL_CreateGPUDevice failed`. No gain.
+- **`vsync: false`**: made it *worse* (~8 fps). Present blocks ~16 ms either
+  way, and turning vsync off only removed the pacing that was keeping the EMA
+  honest.
 
 ## Runtime requirements
 
