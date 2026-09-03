@@ -139,6 +139,20 @@ folders can be deleted safely; they are rebuilt on the next launch (another
 A log of the last run is written to `ports/picori/log.txt`, and the run before
 it to `log.prev.txt`. Include `log.txt` in any bug report.
 
+## Reporting problems
+
+This port is complete but **not actively maintained** — file reports in the
+tracker rather than messaging the porter, so that whoever picks the project up
+next can find them:
+
+| Kind of problem | Where |
+|---|---|
+| Launcher, install, controls, audio routing, this device | [muos-rg35xx-sp-picori/issues](https://github.com/lorencouse/muos-rg35xx-sp-picori/issues) |
+| Rendering or gameplay bugs not specific to a handheld | [999sian/tmc/issues](https://github.com/999sian/tmc/issues) |
+
+Anyone is welcome to take the port over; it is GPL-3.0-or-later and needs no
+permission. See *Taking this over* in the packaging repository.
+
 ## Credits
 
 - **Project Picori** — [999sian](https://github.com/999sian/tmc) and contributors (GPL-3.0-or-later)

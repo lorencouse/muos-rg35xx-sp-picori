@@ -3,6 +3,20 @@
 Packaging for **Project Picori** (*The Legend of Zelda: The Minish Cap* PC port)
 as an installable port for the Anbernic RG35XX SP running muOS.
 
+> ### Status: finished, and looking for a maintainer
+>
+> This port works and is complete as far as its original porter intends to take
+> it. It is **not** actively maintained — issues and pull requests may sit
+> unanswered.
+>
+> **You do not need anyone's permission to continue it.** Everything here is
+> GPL-3.0-or-later. Fork it, take the name, submit updates to PortMaster under
+> your own account — none of that requires asking.
+>
+> Start at [**Taking this over**](#taking-this-over): which repo a given bug
+> lives in, the three lines you change to ship a binary from your own fork,
+> what is device-specific and what is not, and what is known to be unfinished.
+
 The player-facing documentation is [`port/picori/README.md`](port/picori/README.md).
 This file is about building the package.
 
@@ -730,6 +744,48 @@ Genuinely device-conditional, all behind
 Note the middle one assumes every Linux/aarch64 target shares the SP's codec
 behaviour, which is true of the handhelds and not obviously true of ARM
 desktops. If it ever needs narrowing, that is the commit to look at.
+
+### The highest-value next step: upstreaming
+
+Every fork commit that lands in [999sian/tmc](https://github.com/999sian/tmc)
+is one less reason this fork has to exist, and one less thing a future
+maintainer has to inherit. The 35 commits were triaged once; the result is
+recorded here so nobody has to redo it.
+
+**Ready to send as-is.** Standalone fixes, no device assumptions, small
+diffs — three independent PRs:
+
+| Commit | What |
+|---|---|
+| `4d32c0f3f` | Out-of-bounds map-tile guards + CR handling in the dungeonmap parser. A crash fix, touches `src/`, benefits every platform |
+| `da80cb10b` | Join the TTS worker in `~State` — a 14-line shutdown race |
+| `87ae2b5ba` | Slot previews via out-param instead of a static |
+
+**Worth upstreaming after a rebase.** Real features, but developed
+incrementally and interleaved with changelog edits — squash before proposing:
+
+- **Save states** — `9f383127f`, `4f4e25724`, `a5588a744`, `eaf2110c5`.
+  ~1000 lines: 20 slots, previews, keyboard-free rebinding, foreign-state
+  resume through the engine. The single biggest reason anyone currently has
+  to adopt this fork rather than build upstream.
+- **Aspect modes** — `2e87170bb` (stretch), `430f7e5ce` (pixel-perfect).
+  ~70 lines, self-contained, useful on any non-3:2 display.
+- **Settings overlay** — `38974f681`. 500 lines and opinionated about UI;
+  worth asking upstream before writing the PR.
+- **Pacing / present thread** — `1d667ee9b` plus the vsync-lock and pace-log
+  commits. The present thread is opt-in and genuinely useful; the pace-log
+  commits are diagnostics that accreted during the investigation and should
+  be squashed hard or dropped.
+- **Region/language** — `d77c98235`. A real refactor with a test, and stands
+  on its own merits.
+
+**Leave in the fork.** Device-conditional (see above), plus the nine CI and
+`xmake.lua` commits from `5cd376d1e` to `bfdb87ea0` — those exist to hit a
+glibc floor upstream has no reason to care about.
+
+If someone does only the three ready-to-send fixes and the two aspect-mode
+commits, that is five small PRs and it measurably shrinks what the next
+maintainer inherits.
 
 ### Things known to be unfinished
 
