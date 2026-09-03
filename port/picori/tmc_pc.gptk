@@ -2,6 +2,16 @@
 # here: weston/libinput refuses muOS-Keys (udev tags it Keyboard+Joystick) and
 # this SDL3 build finds no gamepad on it either, so gptokeyb translates the pad
 # into a virtual keyboard and everything below mirrors config.json "bindings".
+#
+# Because SDL sees no pad, the port's Controls tab can only bind *keys* -- and
+# every key the SP can send is already spoken for by gameplay. The hk_hotkey
+# layer below is where the spare ones come from: hold SELECT and the four
+# buttons in [controls:hk_hotkey] send save-state keys instead of their normal
+# ones. The launcher passes -H back to nominate SELECT as that hotkey.
+# SELECT is the only non-gameplay face button on this device (START pauses,
+# MENU is the port's settings overlay), which is why it draws the job.
+
+[controls]
 a = x
 b = z
 x = c
@@ -31,3 +41,33 @@ right_analog_up = \"
 right_analog_down = \"
 right_analog_left = \"
 right_analog_right = \"
+
+# Held-SELECT layer -- save states. The keys match config.json's default
+# state_save / state_load / state_next_slot / state_prev_slot bindings, so
+# rebinding them in F8 -> Controls means changing them here too (or just
+# rebinding to whatever these already send).
+# A key left out of a layer is *unbound* while the hotkey is held, not
+# inherited -- `gptokeyb2 -d` prints it empty. So everything that is not one
+# of the four overrides is repeated verbatim, or holding SELECT would also
+# mute the shoulder buttons, START and the MENU overlay.
+[controls:hk_hotkey]
+a = f5             # SELECT+A     save state to the selected slot
+b = f6             # SELECT+B     load state from the selected slot
+right = pagedown   # SELECT+RIGHT next slot
+left = pageup      # SELECT+LEFT  previous slot
+
+x = c
+y = v
+
+l1 = a
+r1 = s
+l2 = q
+r2 = e
+l3 = \"
+r3 = \"
+
+start = enter
+guide = f8
+
+up = up
+down = down

@@ -40,8 +40,26 @@ because weston's libinput refuses muOS-Keys outright. The map mirrors
 | L2, R2   | soft slots  | As above                                 |
 | D-pad    | D-pad       |                                          |
 | START    | Start       | Pause menu                               |
-| SELECT   | Select      |                                          |
+| SELECT   | Select      | Also the save-state modifier — see below |
 | MENU     | F8          | Port settings overlay                    |
+
+**Save states** — hold **SELECT**:
+
+| Buttons | Action |
+|---|---|
+| SELECT + A | Save state to the selected slot |
+| SELECT + B | Load state from the selected slot |
+| SELECT + RIGHT | Next slot |
+| SELECT + LEFT | Previous slot |
+
+There are five manual slots plus a three-deep autosave ring. Pick which slot
+the buttons act on in the settings overlay under **Saves** — that tab also has
+per-slot Save/Load buttons and timestamps, so you never have to guess what is
+in one. The choice is remembered between sessions.
+
+Save states are separate from the game's own save file: they capture exactly
+where you are standing, mid-cutscene included. `tmc.sav` is still what the
+in-game save menu writes.
 
 If MENU does not open the settings overlay (muOS may claim the button before
 the port sees it), use the on-screen **"L"** prompt on the file-select screen,
@@ -73,9 +91,9 @@ runs of 2 and 3.
 This is a software-rendered GBA engine running on four Cortex-A53 cores, under
 a compositor, with no working KMS. It is playable, not perfect:
 
-- **Full game speed, ~26-30 FPS picture.** The game logic holds a rock-solid
-  60 ticks per second; only the render cadence varies. *Pixel perfect* is
-  slightly cheaper than the full-screen modes.
+- **60 FPS at full game speed**, with headroom to spare. If you change
+  *Display → Internal scale* away from 2 the frame rate will drop sharply —
+  that setting is what makes 60 reachable here, counter-intuitive as it looks.
 - **Upstream is work-in-progress.** Rendering and gameplay bugs that are not
   specific to this device belong at
   [999sian/tmc/issues](https://github.com/999sian/tmc/issues).
@@ -87,11 +105,11 @@ Everything the port writes stays inside `ports/picori/`:
 | File / folder      | What it is                                    |
 |--------------------|-----------------------------------------------|
 | `tmc.sav`          | In-game save (EEPROM)                         |
-| `state_auto_*.bin` | Rolling autosave states                       |
+| `state_*.bin`      | Save states (`state_auto_*` are the autosave ring) |
 | `config.json`      | Your settings                                 |
 | `assets/`, `assets_src/`, `rom_data/` | Generated from your ROM on first launch |
 
-Back up `tmc.sav` and `state_auto_*.bin` before reinstalling — reinstalling
+Back up `tmc.sav` and `state_*.bin` before reinstalling — reinstalling
 also overwrites `config.json` with the shipped defaults. The generated asset
 folders can be deleted safely; they are rebuilt on the next launch (another
 ~2 minute wait).

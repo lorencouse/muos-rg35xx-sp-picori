@@ -75,6 +75,18 @@
         "up": [
             "SDLK:0x40000052",
             "SDL_GAMEPAD:0x0000000b"
+        ],
+        "state_save": [
+            "SDLK:0x4000003e"
+        ],
+        "state_load": [
+            "SDLK:0x4000003f"
+        ],
+        "state_next_slot": [
+            "SDLK:0x4000004e"
+        ],
+        "state_prev_slot": [
+            "SDLK:0x4000004b"
         ]
     },
     "color_correction": false,
@@ -131,5 +143,6 @@
     "upscale_method": "nearest",
     "vsync": true,
     "widescreen_enabled": false,
-    "window_scale": 1
+    "window_scale": 1,
+    "savestate_slot": 0
 }

@@ -187,6 +187,51 @@ when it exits. Progress falls back to the interval autosave ring, so the
 worst case is bounded rather than lost, but a save-on-`SIGTERM` handler in
 `999sian/tmc` would close it.
 
+## Save states
+
+Five manual slots plus a three-deep auto-save ring, all in **MENU → Saves**.
+One manual slot is *selected*; the save-state hotkeys act on it, and the
+selection persists in `config.json` as `savestate_slot`.
+
+| Buttons | Action |
+|---|---|
+| **SELECT + A** | Save state to the selected slot |
+| **SELECT + B** | Load state from the selected slot |
+| **SELECT + RIGHT** | Next slot |
+| **SELECT + LEFT** | Previous slot |
+
+Getting there took two pieces, one in the binary and one here.
+
+**In the fork:** save states existed but every route to them was a hard-wired
+keyboard case — F5/F6 quick, F1-F4 direct. There is no keyboard on this
+device, so the only way in was the F8 menu, and the Controls tab, which
+rebinds every other action, had nothing to offer. Four bindable actions now
+exist (`state_save`, `state_load`, `state_next_slot`, `state_prev_slot`) and
+act on the selected slot rather than a fixed one — which is what lets four
+binds reach five slots. A handheld does not have ten spare buttons.
+
+**Here:** SDL sees no gamepad on this device (weston/libinput refuses
+muOS-Keys, so gptokeyb hands the port a virtual keyboard instead). The port
+can therefore only bind *keys* — and every key the SP can send is already
+gameplay. The spare keys come from a gptokeyb hotkey layer:
+`[controls:hk_hotkey]` in `tmc_pc.gptk`, activated by `-H back` on the
+gptokeyb command line, remaps four buttons while SELECT is held.
+
+Two things worth knowing if you edit that layer:
+
+- A key **left out of a layer is unbound while the hotkey is held**, not
+  inherited from `[controls]`. `gptokeyb2 -d` prints it empty. Everything
+  that is not one of the four overrides is therefore repeated verbatim, or
+  holding SELECT would also mute the shoulder buttons, START and the MENU
+  overlay.
+- SELECT draws the job because it is the only non-gameplay face button on
+  this device: START pauses and MENU is the settings overlay, so neither can
+  be spent on a modifier.
+
+The auto ring (slots 6-8) is loadable from the menu but not selectable — it
+overwrites itself on a schedule, so a hand-made state parked there would
+silently vanish.
+
 ## Runtime requirements
 
 Determined by reading the ELF directly:
@@ -231,6 +276,9 @@ Tier A: installable. Not yet submitted to PortMaster.
 - [x] Shutdown `SIGABRT` fixed — `cleanup()` reaps `tmc_pc` before tearing
       down weston, so quitting no longer aborts inside libX11's IO error
       handler or writes a `bugreport_*` bundle (see **Shutdown**)
+- [x] Save-state management: five manual slots + auto ring, selectable in
+      **MENU → Saves**, driven by SELECT+A/B/LEFT/RIGHT through a gptokeyb
+      hotkey layer (see **Save states**)
 - [ ] PortMaster submission → **Multiverse**
       ([PortsMaster-MV/PortMaster-MV-New](https://github.com/PortsMaster-MV/PortMaster-MV-New)),
       not the main repo: every Nintendo-decomp port (Ship of Harkinian,

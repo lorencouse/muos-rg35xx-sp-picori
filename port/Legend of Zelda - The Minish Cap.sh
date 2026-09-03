@@ -251,7 +251,13 @@ GOV_PIN_PID=$!
 # outright ("device is a joystick or a gamepad, ignoring") and SDL3 finds no
 # gamepad on it either, so the pad has to arrive as a virtual keyboard.
 # tmc_pc.gptk mirrors the keyboard half of config.json's "bindings".
-$GPTOKEYB2 "tmc_pc" -c "$GAMEDIR/tmc_pc.gptk" &
+# -H back nominates SELECT as gptokeyb's hotkey, which activates the
+# [controls:hk_hotkey] layer in tmc_pc.gptk while it is held. That layer is
+# the only source of spare keys on this device: SDL sees no gamepad here (the
+# pad arrives as a virtual keyboard), so the port's own Controls tab can bind
+# keys but every key the SP can send is already gameplay. Held SELECT frees
+# four of them for the save-state actions.
+$GPTOKEYB2 "tmc_pc" -H back -c "$GAMEDIR/tmc_pc.gptk" &
 
 # Allow an override from picori.env for on-device experimentation without
 # re-pushing this script (e.g. TMC_PROFILE=1 TMC_PACE_LOG=1 for the port's
