@@ -391,7 +391,96 @@ Determined by reading the ELF directly:
 
 That glibc floor is higher than any port currently in PortMaster's catalogue
 (the highest `min_glibc` across its 1,422 entries is 2.32), so older CFW are
-unlikely to run this binary at all.
+unlikely to run this binary at all. Confirmed by reading the shipped
+`v0.8.3-sp3` binary directly:
+
+```
+$ objdump -p tmc_pc | grep NEEDED
+  libpng16.so.16  libEGL.so.1  libGLESv2.so.2  libstdc++.so.6
+  libm.so.6  libgomp.so.1  libgcc_s.so.1  libc.so.6  ld-linux-aarch64.so.1
+$ objdump -T tmc_pc | grep -oE 'GLIBC_[0-9.]+'   | sort -uV | tail -1  -> GLIBC_2.34
+$ objdump -T tmc_pc | grep -oE 'GLIBCXX_[0-9.]+' | sort -uV | tail -1  -> GLIBCXX_3.4.30
+```
+
+## Device support
+
+The port was written for, and every measurement in this file was taken on,
+the RG35XX SP. Nothing in it is *conceptually* SP-specific though — it is a
+software-rendered aarch64 binary under the stock PortMaster weston runtime —
+so the work in flight is to widen it to the rest of the aarch64 handhelds
+without giving up the tuning that made 60 fps reachable here.
+
+Three things gated that, in order of how many devices each one costs.
+
+**1. The runtime ABI floor.** The single biggest one, and it is decided
+entirely by the build container: nothing else matters if the loader refuses
+the binary. The fork now links `-static-libstdc++ -static-libgcc` on Linux
+(`xmake.lua`), which removes the `GLIBCXX_3.4.30` requirement outright, and
+builds its aarch64 leg inside `debian:bullseye` (glibc 2.31) rather than on
+`ubuntu-22.04-arm` (2.35). bullseye's stock GCC 10 is enough — the only
+C++20 in the tree is `<span>` and `<numbers>`, so no LLVM backport is
+needed. CI gates the result: `_build.yaml`'s "Report the runtime ABI floor"
+step reads the produced ELF and fails the build if it needs anything above
+`matrix.glibc_max`, so the floor cannot drift back up unnoticed.
+
+`libgomp.so.1` is still a dynamic dependency (the OpenMP scanline workers)
+and is *not* covered by those flags. It is present on muOS; whether every
+target CFW ships it is unverified. The ABI step prints the `NEEDED` list on
+every build, so this stays visible.
+
+**2. The panel.** `config.json`'s `aspect_mode` and `internal_scale` were
+tuned for one 4:3 640x480 screen. The launcher now derives them from the
+actual panel — `DISPLAY_WIDTH`/`DISPLAY_HEIGHT` where PortMaster exports
+them, else `/sys/class/graphics/fb0/virtual_size`, else the SP's — and
+seeds them **once**, on first launch, so a player's own Settings changes
+are never overwritten:
+
+| Panel | `aspect_mode` | `internal_scale` | Why |
+|---|---|---|---|
+| 4:3, ≥480 wide (SP, RG40XX, RG353) | `stretch` | 2 | The measured SP config |
+| 4:3, <480 wide | `stretch` | 1 | Too narrow for the 480x320 prescale to pay |
+| 1:1 (RGB30, CubeXX) | `pixel_perfect` | 2 | 3:2 stretched to square is grotesque |
+| 16:9 (TrimUI Smart Pro class) | `pixel_perfect` | 2 | Likewise |
+
+`weston.ini` is generated at launch too. The shipped `picori-weston.ini`
+names the SP's output (`VGA-0`), and weston silently ignores an `[output]`
+section matching no real output — so on a device that calls its panel
+something else the section was simply inert. The generated file repeats the
+same `scale=1` block under every name these handhelds use; at most one
+matches and the rest cost nothing.
+
+**3. muOS-only audio.** `SDL_AUDIODRIVER=pipewire` and the forced
+`clock.force-rate 44100` / `clock.force-quantum 768` are measured against
+*this* codec on a CFW that runs PipeWire. ArkOS and friends run bare ALSA or
+PulseAudio, where `pw-metadata` does not exist and naming the pipewire
+driver leaves the port silent. The launcher now probes for a live graph and
+only takes that path when there is one; otherwise it passes no driver at all
+and lets SDL's own probe decide.
+
+### What is still unverified
+
+Honesty about the limits of the above: **it has been tested on the SP and in
+the sandbox, not on a second device.** `tools/test-launcher.sh` covers the
+panel matrix, the first-launch-only seeding, the generated `weston.ini` and
+both audio paths, but a sandbox cannot tell you whether the game is playable.
+
+Two things in particular need someone with other hardware:
+
+- **Input doubling.** All input arrives as a virtual keyboard because SDL
+  sees no gamepad on the SP (weston's libinput refuses muOS-Keys). On a
+  device where SDL *does* enumerate the pad, `config.json` binds both
+  `SDLK:` and `SDL_GAMEPAD:` for every action, so presses arrive twice.
+  Harmless for movement; it breaks the held-SELECT hotkey layer, which is
+  the only source of spare keys for the save-state actions.
+- **CPU headroom.** RK3326 devices (RG351, RG353, OGA) are 4x A35 at
+  1.3 GHz — slower per clock than the SP's A53 at 1.512 GHz — so the 60 fps
+  cap that `internal_scale: 2` makes reachable here probably is not
+  reachable there. The port's own Settings menu is the escape hatch, but
+  the shipped defaults for that tier are a guess until measured.
+
+Out of scope: **armhf**. The fork releases an arm64 asset only, and the
+32-bit-only devices (RG350, RS97, PocketGo) could not hold the tick rate for
+a software PPU regardless.
 
 ## Status
 
@@ -423,6 +512,19 @@ Tier A: installable. Not yet submitted to PortMaster.
 - [x] Save-state management: 20 manual slots + auto ring with preview
       thumbnails and timestamps in **MENU → Saves**, driven by L2 (save to a
       new slot), Y (load) and R2 (fast-forward) (see **Save states**)
+- [x] Portability pass for devices other than the SP: static libstdc++ and a
+      glibc-2.31 build container in the fork with a CI gate on the resulting
+      ABI floor; panel-derived `aspect_mode`/`internal_scale` seeded once on
+      first launch; a generated `weston.ini` that is not tied to one output
+      name; the PipeWire path taken only where a graph answers. Covered by
+      20 new checks in `tools/test-launcher.sh` (see **Device support**)
+- [ ] Rebuild and retag the fork from the bullseye container, then update
+      `build.sh`'s `TMC_TAG`/`TMC_SHA256` and drop `port.json`'s `min_glibc`
+      from 2.34 to whatever the ABI step reports. **The binary shipped today
+      is still the 2.34 one** — none of the above widens the device list
+      until that retag happens
+- [ ] Confirm on one non-SP device: input doubling where SDL sees a real
+      gamepad, and whether the RK3326 tier needs different shipped defaults
 - [ ] PortMaster submission → **Multiverse**
       ([PortsMaster-MV/PortMaster-MV-New](https://github.com/PortsMaster-MV/PortMaster-MV-New)),
       not the main repo: every Nintendo-decomp port (Ship of Harkinian,

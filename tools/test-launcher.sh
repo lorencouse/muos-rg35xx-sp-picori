@@ -52,12 +52,21 @@ sed -e "s#/sys/devices/system/cpu/cpufreq/policy\*#$SB/sys/policy*#g" \
 export PATH="$SB/bin:$PATH" XDG_DATA_HOME="$SB"
 
 stub_weston() { # $1: "runs" (blocks until killed) | "quits"
+  # Both variants record the argument vector: the launcher passes the
+  # game's environment to westonwrap as VAR=value arguments, so this is
+  # where the audio-driver decision becomes observable.
   if [ "$1" = "quits" ]; then
-    printf '#!/bin/bash\n[ "$1" = cleanup ] && exit 0\nexit 0\n' > "$SB/weston/westonwrap.sh"
+    cat > "$SB/weston/westonwrap.sh" <<EOF
+#!/bin/bash
+[ "\$1" = "cleanup" ] && exit 0
+printf '%s\n' "\$@" > "$SB/state/weston.args"
+exit 0
+EOF
   else
     cat > "$SB/weston/westonwrap.sh" <<EOF
 #!/bin/bash
 [ "\$1" = "cleanup" ] && exit 0
+printf '%s\n' "\$@" > "$SB/state/weston.args"
 trap 'kill \$SP 2>/dev/null; exit 0' TERM INT
 exec -a game-sleep sleep 300 & SP=\$!
 wait \$SP
@@ -107,6 +116,93 @@ check "governor"      "powersave" "$(cat "$SB/sys/policy0/scaling_governor")"
 check "pipewire reset" "2"        "$(grep -c -- '-d$' "$SB/state/pw.log")"
 check "pm_finish"     "yes"       "$([ -f "$SB/state/pm_finish.stamp" ] && echo yes || echo no)"
 check "game stopped"  "0"         "$(pgrep -f game-sleep | wc -l | tr -d ' ')"
+
+# --------------------------------------------------------------------------
+# Device adaptation.
+#
+# The port is meant to install on more than the RG35XX SP, and the launcher
+# is where that portability lives: it picks aspect_mode / internal_scale
+# from the panel, writes a weston.ini that is not tied to one output name,
+# and only takes the PipeWire path when there is a graph to talk to. None
+# of that can be checked on the SP -- the SP is one point of the matrix --
+# so it is checked here instead.
+# --------------------------------------------------------------------------
+
+fresh_game() {
+  rm -rf "$GAMEDIR"
+  mkdir -p "$GAMEDIR/assets"
+  head -c 1024 /dev/zero > "$GAMEDIR/baserom.gba"
+  # The real shipped file, so the seeding is exercised against the exact
+  # formatting it has to edit rather than a convenient fake.
+  cp "$HERE/port/picori/config.json" "$GAMEDIR/config.json"
+  reset
+}
+
+cfg_get() { # $1: key -> its value, unquoted
+  grep -o "\"$1\": *[^,]*" "$GAMEDIR/config.json" | head -1 | sed 's/.*: *//; s/"//g'
+}
+
+launch_at() { # $1: width  $2: height
+  DISPLAY_WIDTH="$1" DISPLAY_HEIGHT="$2" bash "$SB/launcher.sh" >/dev/null 2>&1
+}
+
+stub_weston quits
+
+echo "== panel -> config seeding =="
+# 640x480 is the SP: 4:3, so the deliberate stretch stays, and the panel is
+# wide enough for the 2x prescale that makes the 60 FPS cap reachable.
+fresh_game; launch_at 640 480
+check "640x480 aspect"   "stretch"       "$(cfg_get aspect_mode)"
+check "640x480 iscale"   "2"             "$(cfg_get internal_scale)"
+
+# 720x720 (RGB30 / CubeXX). Stretching a 3:2 frame to 1:1 would be grotesque.
+fresh_game; launch_at 720 720
+check "720x720 aspect"   "pixel_perfect" "$(cfg_get aspect_mode)"
+check "720x720 iscale"   "2"             "$(cfg_get internal_scale)"
+
+# 1280x720 (TrimUI Smart Pro class). 16:9, likewise not a stretch target.
+fresh_game; launch_at 1280 720
+check "1280x720 aspect"  "pixel_perfect" "$(cfg_get aspect_mode)"
+
+# 320x240: 4:3, but too narrow for the 480x320 prescale to be anything but
+# wasted bandwidth.
+fresh_game; launch_at 320 240
+check "320x240 aspect"   "stretch"       "$(cfg_get aspect_mode)"
+check "320x240 iscale"   "1"             "$(cfg_get internal_scale)"
+
+echo "== seeding is first-launch only =="
+# The same file holds the player's own Settings changes, so a second launch
+# must not reassert the device defaults over them.
+fresh_game; launch_at 640 480
+sed -i.bak 's/"internal_scale": 2/"internal_scale": 1/' "$GAMEDIR/config.json"; rm -f "$GAMEDIR/config.json.bak"
+launch_at 640 480
+check "player value kept" "1"            "$(cfg_get internal_scale)"
+
+echo "== generated weston.ini =="
+fresh_game; launch_at 640 480
+WINI="$GAMEDIR/runtime/weston.ini"
+check "weston.ini written" "yes"         "$([ -s "$WINI" ] && echo yes || echo no)"
+check "keeps the SP output" "1"          "$(grep -c '^name=VGA-0$' "$WINI")"
+check "names other panels" "yes"         "$(grep -q '^name=HDMI-A-1$' "$WINI" && grep -q '^name=DSI-1$' "$WINI" && echo yes || echo no)"
+check "composites 1:1"     "0"           "$(grep -c '^scale=2$' "$WINI")"
+
+echo "== audio: pipewire present =="
+fresh_game; launch_at 640 480
+check "forces the rate"  "1"             "$(grep -c 'clock.force-rate 44100' "$SB/state/pw.log")"
+check "asks for pipewire" "1"            "$(grep -c '^SDL_AUDIODRIVER=pipewire$' "$SB/state/weston.args")"
+check "matches the quantum" "1"          "$(grep -c '^SDL_AUDIO_DEVICE_SAMPLE_FRAMES=768$' "$SB/state/weston.args")"
+
+echo "== audio: no pipewire (ArkOS and friends) =="
+# Without a graph, naming the pipewire driver would leave the port silent.
+# The launcher must pass no driver at all and let SDL probe -- and must not
+# leave PW_FORCED set, or cleanup would call a pw-metadata that isn't there.
+mv "$SB/bin/pw-metadata" "$SB/bin/pw-metadata.hidden"
+fresh_game; launch_at 640 480
+check "no driver forced" "0"             "$(grep -c '^SDL_AUDIODRIVER' "$SB/state/weston.args")"
+check "no empty driver"  "0"             "$(grep -c '^SDL_AUDIODRIVER=$' "$SB/state/weston.args")"
+check "no pw calls"      "0"             "$(cat "$SB/state/pw.log" 2>/dev/null | wc -l | tr -d ' ')"
+check "still finishes"   "yes"           "$([ -f "$SB/state/pm_finish.stamp" ] && echo yes || echo no)"
+mv "$SB/bin/pw-metadata.hidden" "$SB/bin/pw-metadata"
 
 echo
 if [ "$fails" -eq 0 ]; then echo "all checks passed"; else echo "$fails check(s) FAILED"; fi

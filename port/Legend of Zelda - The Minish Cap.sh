@@ -16,16 +16,24 @@
 # - gfxmode "system", not crusty_*: the port renders in software, needs no
 #   GL, and crusty's SDL loader hooks this binary's exported SDL symbols as
 #   if they were SDL2 -> "Could not create SDL Window" + SIGSEGV.
-# - picori-weston.ini sets output scale=1: the X screen matches the 640x480
-#   panel, so weston composites 1:1 and filters nothing. (scale=2 gave a
-#   320x240 X screen that weston bilinear-upscaled -- cheaper per frame, but
-#   it blurred every pixel. config.json's internal_scale=2 buys the speed
-#   back instead.) The kernel has no SysV IPC (CONFIG_SYSVIPC unset) so
-#   MIT-SHM is unavailable and every frame is copied through the X socket.
+# - weston output scale=1: the X screen matches the panel, so weston
+#   composites 1:1 and filters nothing. (scale=2 gave a 320x240 X screen
+#   that weston bilinear-upscaled -- cheaper per frame, but it blurred
+#   every pixel. config.json's internal_scale=2 buys the speed back
+#   instead.) The kernel has no SysV IPC (CONFIG_SYSVIPC unset) so MIT-SHM
+#   is unavailable and every frame is copied through the X socket.
+#   The weston.ini is generated per launch rather than shipped, because the
+#   [output] name differs per device; picori-weston.ini remains as the SP's
+#   documented reference and as the fallback if generation fails.
 # - Governor pinned to performance: muOS leaves ports on powersave (480 MHz
 #   of 1512); the software PPU needs the clock.
-# - Audio: SDL's pipewire backend against muOS's PipeWire; the synth thread
-#   is lifted to SCHED_FIFO because it needs most of a core.
+# - Audio: SDL's pipewire backend against muOS's PipeWire, but only where a
+#   PipeWire graph actually answers -- on a CFW without one the driver is
+#   left to SDL's own probe. The synth thread is lifted to SCHED_FIFO
+#   because it needs most of a core.
+# - Panel-dependent settings (aspect_mode, internal_scale) are seeded from
+#   the detected resolution on the FIRST launch only; after that the file
+#   belongs to the player. See README.md "Device support".
 # - Pacing: config.json ships vsync=true, decouple_render=true, a 60 FPS
 #   render grid (frame_time_ns=16666667) and internal_scale=2. Measured on
 #   this device: a locked 60 TPS / 60 FPS. The internal_scale is what makes
@@ -182,6 +190,74 @@ mkdir -p "$XDG_DATA_HOME"
 
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 
+# --- panel ----------------------------------------------------------------
+# Everything below that depends on the screen derives from these two.
+# Current PortMaster builds export DISPLAY_WIDTH/DISPLAY_HEIGHT from
+# control.txt, older ones do not, and this port has to cope with both --
+# so fall back to the framebuffer's own geometry (fb0/virtual_size reads
+# "640,480") and finally to the RG35XX SP's panel, which is what every
+# measured number in README.md was taken on.
+screen_is_num() { case "$1" in ''|*[!0-9]*) return 1 ;; *) return 0 ;; esac; }
+
+SCREEN_W="${DISPLAY_WIDTH:-}"
+SCREEN_H="${DISPLAY_HEIGHT:-}"
+if ! screen_is_num "$SCREEN_W" || ! screen_is_num "$SCREEN_H"; then
+  if [ -r /sys/class/graphics/fb0/virtual_size ]; then
+    IFS=, read -r SCREEN_W SCREEN_H < /sys/class/graphics/fb0/virtual_size
+    SCREEN_W="$(printf '%s' "$SCREEN_W" | tr -dc '0-9')"
+    SCREEN_H="$(printf '%s' "$SCREEN_H" | tr -dc '0-9')"
+  fi
+fi
+if ! screen_is_num "$SCREEN_W" || ! screen_is_num "$SCREEN_H" \
+   || [ "$SCREEN_W" -eq 0 ] || [ "$SCREEN_H" -eq 0 ]; then
+  SCREEN_W=640; SCREEN_H=480
+fi
+
+# --- device-tuned defaults (first launch only) ----------------------------
+# config.json ships tuned for the SP: a 4:3 640x480 panel, where "stretch"
+# fills it and internal_scale=2 is what makes the 60 FPS cap viable (see
+# README.md "Frame rate"). Neither is right on every panel:
+#
+#   - "stretch" maps the native 3:2 frame onto the whole panel. That is a
+#     mild, deliberate distortion on a 4:3 screen. On a 1:1 (RGB30-class)
+#     or 16:9 panel it is a gross one, so those get "pixel_perfect"
+#     instead -- integer scaling, letterboxed, every game pixel an
+#     identical NxN block.
+#   - internal_scale=2 prescales 240x160 -> 480x320 in the port's own loop
+#     before SDL's software scaler runs. It pays for itself when the
+#     window is much bigger than 480x320 and just costs bandwidth when it
+#     is not, so it is only seeded on panels at least that wide.
+#
+# Seeded ONCE and then never touched again: config.json is also where the
+# player's own Settings changes are saved, so re-asserting these on every
+# launch would silently undo them. Delete runtime/.device-tuned to re-seed.
+if [ ! -f "$GAMEDIR/runtime/.device-tuned" ]; then
+  seed_aspect="pixel_perfect"
+  # Integer thousandths, so no shell float math: 4:3 is 1333.
+  seed_ar=$(( SCREEN_W * 1000 / SCREEN_H ))
+  if [ "$seed_ar" -ge 1280 ] && [ "$seed_ar" -le 1400 ]; then
+    seed_aspect="stretch"
+  fi
+  seed_iscale=1
+  [ "$SCREEN_W" -ge 480 ] && seed_iscale=2
+
+  # A temp file + mv rather than `sed -i`: busybox sed (some CFW ship it
+  # as the only sed) rejects the suffix form GNU and BSD spell differently.
+  if [ -f "$GAMEDIR/config.json" ]; then
+    seed_tmp="$GAMEDIR/config.json.seed.$$"
+    if sed -e "s/\"aspect_mode\": \"[a-z_]*\"/\"aspect_mode\": \"$seed_aspect\"/" \
+           -e "s/\"internal_scale\": [0-9][0-9]*/\"internal_scale\": $seed_iscale/" \
+           "$GAMEDIR/config.json" > "$seed_tmp" 2>/dev/null && [ -s "$seed_tmp" ]; then
+      mv -f "$seed_tmp" "$GAMEDIR/config.json"
+      echo "[launcher] first launch: seeded aspect_mode=$seed_aspect internal_scale=$seed_iscale for ${SCREEN_W}x${SCREEN_H}"
+    else
+      rm -f "$seed_tmp"
+      echo "[launcher] could not seed config.json -- shipped defaults kept"
+    fi
+  fi
+  mkdir -p "$GAMEDIR/runtime" && touch "$GAMEDIR/runtime/.device-tuned"
+fi
+
 # --- weston runtime -------------------------------------------------------
 weston_dir="/tmp/weston"
 weston_runtime="weston_pkg_0.2"
@@ -280,9 +356,31 @@ echo "ROM=${ROM_FILES[$rom_found]} (${ROM_NAMES[$rom_found]})"
 # with a seam every few cycles. Matching both to 768 makes SDL's pull
 # exactly the DAC's consumption (measured 44 544 vs 44 101 frames/s).
 # These are runtime metadata on the system graph, cleared again by cleanup().
-PW_FORCED=1
-pw_settings clock.force-rate 44100
-pw_settings clock.force-quantum 768
+# Both of those numbers are measured against THIS codec on a CFW that
+# runs PipeWire. Elsewhere the graph may not exist at all -- ArkOS and
+# friends run bare ALSA or PulseAudio, where pw-metadata is absent and
+# asking SDL for the pipewire driver by name means it opens no device and
+# the port is silent. So probe for a live graph and only take this path
+# when there is one; otherwise say nothing and let SDL's own probe pick,
+# which is what every other PortMaster title does.
+AUDIO_DRIVER="${SDL_AUDIODRIVER:-}"
+AUDIO_FRAMES="${SDL_AUDIO_DEVICE_SAMPLE_FRAMES:-}"
+if command -v pw-metadata >/dev/null 2>&1 && pw_settings; then
+  PW_FORCED=1
+  pw_settings clock.force-rate 44100
+  pw_settings clock.force-quantum 768
+  AUDIO_DRIVER="${AUDIO_DRIVER:-pipewire}"
+  AUDIO_FRAMES="${AUDIO_FRAMES:-768}"
+  echo "[launcher] pipewire graph found: forced 44100 Hz / 768-frame quantum"
+else
+  echo "[launcher] no pipewire graph -- leaving the audio driver to SDL"
+fi
+
+# Passed through to westonwrap as VAR=value arguments, and only when set:
+# SDL treats an empty SDL_AUDIODRIVER as a driver named "", not as unset.
+AUDIO_ENV=()
+[ -n "$AUDIO_DRIVER" ] && AUDIO_ENV+=("SDL_AUDIODRIVER=$AUDIO_DRIVER")
+[ -n "$AUDIO_FRAMES" ] && AUDIO_ENV+=("SDL_AUDIO_DEVICE_SAMPLE_FRAMES=$AUDIO_FRAMES")
 
 # OMP_WAIT_POLICY=passive: the port's OpenMP scanline workers otherwise
 # spin-wait at their barrier and fight the audio thread for the 4 cores.
@@ -291,11 +389,43 @@ pw_settings clock.force-quantum 768
 # PIPEWIRE_RUNTIME_DIR is spelled out because westonwrap resets
 # XDG_RUNTIME_DIR (an early run SIGSEGV'd inside libpipewire without it).
 export PIPEWIRE_RUNTIME_DIR=/run
-export WESTON_CONFIG="$GAMEDIR/picori-weston.ini"
+# picori-weston.ini documents the SP's settings but names that device's
+# output (VGA-0). weston silently ignores an [output] section matching no
+# real output, so on a handheld that calls its panel something else the
+# whole section would be inert. Generate the file instead and repeat the
+# same block under every name these devices are known to use: at most one
+# can match and the others cost nothing.
+#
+# scale=1 on all of them, which is also weston's default -- the X screen
+# then matches the panel and weston composites 1:1, filtering nothing.
+# scale=2 is cheaper per frame but bilinear-upscales every pixel; that was
+# measured on the panel and rejected (README.md "Picture quality").
+WESTON_INI="$GAMEDIR/runtime/weston.ini"
+mkdir -p "$GAMEDIR/runtime"
+if {
+  echo "# Generated by the launcher for a ${SCREEN_W}x${SCREEN_H} panel."
+  echo "# Edits here are overwritten on the next launch; change"
+  echo "# picori-weston.ini instead, or set WESTON_CONFIG in picori.env."
+  echo
+  echo "[core]"
+  echo
+  for wout in VGA-0 HDMI-A-1 HDMI-A-2 DSI-1 DSI-2 DPI-1 LVDS-1 eDP-1 Unknown-1; do
+    echo "[output]"
+    echo "name=$wout"
+    echo "scale=1"
+    echo
+  done
+  echo "[input-method]"
+  echo "path=libexec/weston-keyboard"
+} > "$WESTON_INI" 2>/dev/null && [ -s "$WESTON_INI" ]; then
+  export WESTON_CONFIG="$WESTON_INI"
+else
+  echo "[launcher] could not write $WESTON_INI -- using the shipped SP config"
+  export WESTON_CONFIG="$GAMEDIR/picori-weston.ini"
+fi
 $ESUDO $weston_dir/westonwrap.sh drm gl kiosk system \
 SDL_VIDEODRIVER=x11 \
-SDL_AUDIODRIVER="${SDL_AUDIODRIVER:-pipewire}" \
-SDL_AUDIO_DEVICE_SAMPLE_FRAMES="${SDL_AUDIO_DEVICE_SAMPLE_FRAMES:-768}" \
+${AUDIO_ENV[@]+"${AUDIO_ENV[@]}"} \
 PIPEWIRE_RUNTIME_DIR=/run \
 OMP_WAIT_POLICY=passive \
 XDG_DATA_HOME="$XDG_DATA_HOME" \
