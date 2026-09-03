@@ -89,22 +89,28 @@ unlikely to run this binary at all.
 
 ## Status
 
-Tier A: installable by hand. Not yet submitted to PortMaster — see
-`TODO` below.
+Tier A: installable. Not yet submitted to PortMaster.
 
 - [x] Launcher hardened with trap-based teardown (governor + PipeWire settings
       are system-wide; a crash previously left them applied until reboot)
+- [x] Game runs backgrounded under `wait` so signals are not deferred
 - [x] ROM presence + SHA-1 validation across all three regions
 - [x] First-launch asset-extraction notice (~2 min on a still screen)
 - [x] `port.json` / `gameinfo.xml` / player README
-- [ ] `screenshot.png` and `cover.png` — need a device capture
-- [ ] Tagged release `v0.8.3-sp1` on the fork (binary currently only exists as
-      a CI artifact that expires 2026-12-01)
+- [x] `screenshot.png` (captured from the device) and `cover.png`
+- [x] Tagged release [`v0.8.3-sp1`](https://github.com/lorencouse/tmc/releases/tag/v0.8.3-sp1)
+      on the fork; `build.sh` fetches and verifies from it
+- [x] Reproducible build verified from a fresh clone
+- [x] Shipped configs verified byte-identical to the working device install
 - [ ] End-to-end install test from the zip on a clean card
 - [ ] PortMaster submission → **Multiverse**
       ([PortsMaster-MV/PortMaster-MV-New](https://github.com/PortsMaster-MV/PortMaster-MV-New)),
       not the main repo: every Nintendo-decomp port (Ship of Harkinian,
       sm64coopdx, zelda3) lives there.
+
+Known cosmetic gaps, from the device log: `SDL_CreateGPUDevice` fails and the
+port falls back to software rendering, and no TTS backend exists — so
+`gpu_raster` and `tts_enabled` in the shipped `config.json` are inert here.
 
 ## Licence
 
