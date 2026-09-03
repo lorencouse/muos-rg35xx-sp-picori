@@ -192,34 +192,51 @@ renderer — and whether it produced any draw data picks the path: an empty draw
 list (normal gameplay in console mode) presents threaded, anything else drains
 the worker and presents synchronously as before.
 
-Measured on the SP, launcher-driven, 95 s runs, same scene, same binary:
+Measured on the SP, launcher-driven, 95 s runs, same scene, same binary.
+Statistics are over the 85 in-run samples, excluding the teardown tail:
 
-| `present_thread` | present (game thread) | raster + handoff | flip | tps | fps |
-|---|---|---|---|---|---|
-| off | 8.5-9.2 ms | 3.7-4.0 ms | 3.8-5.4 ms | 60.00 | 60.00 |
-| **on** | **5.4-5.5 ms** | 5.4-5.5 ms | **0.0 ms** | 60.00 | 60.00 |
+| CPU | `present_thread` | fps mean | fps min | present (game thread) | tps |
+|---|---|---|---:|---|---|
+| 1.512 GHz | off | 59.70 | 55.08 | 8.92 ms (raster 4.7 + flip 4.1) | 60.01 |
+| 1.512 GHz | **on** | 59.44 | 55.08 | **6.15 ms** (flip 0) | 60.01 |
+| 1.200 GHz | off | 57.85 | **40.33** | ~9.5 ms | 60.01 |
+| 1.200 GHz | **on** | **59.78** | **57.05** | ~5.2 ms | 60.01 |
 
-The flip leaves the game thread entirely. It is not free: the handoff copies
-the finished 480x320 frame into a staging buffer, which is the ~1.6 ms the
-raster column gains. Net **~3.4 ms per frame** returned to the game thread —
-about a fifth of the 16.67 ms budget.
+**At full clock this scene has headroom, so the frame rate does not move** —
+the flip simply stops being the game thread's problem, worth ~2.8 ms/frame.
+The handoff is not free: it copies the finished 480x320 frame into staging,
+which is why the raster column absorbs part of what the flip column gives up.
 
-**In this scene both configurations already hold 60/60, so the fps column is
-unchanged; what the change buys is headroom, not frame rate here.** The
-scenes that matter are the ones that were missing the budget — proving that
-needs a heavy-scene capture, which this run did not do.
+The bottom two rows are the point. Underclocking to 1.2 GHz puts the same
+scene over budget, which is the condition the port actually cares about, and
+there the saved time converts into frames: **the worst second goes from 40.3
+to 57.1 fps** and the mean recovers to within a frame of 60. The gain is in
+the floor, not the average — which is what "drops frames in busy scenes"
+means to a player.
 
-The per-second census (`TMC_PACE_LOG=1`) reports 61 of 61 presents on the
-threaded path with zero fallbacks to synchronous, so the overlay check is not
-quietly disabling it. 86 of 92 samples sat at exactly 60.00 tps; no crashes,
-no `bugreport_*` bundle, governor restored to `ondemand` on exit.
+Game speed (`tps`) is 60.01 in every configuration; decoupled pacing was
+already protecting that. What changes is whether the display keeps up.
 
-Worth recording because it cost an hour: the first two device runs measured
-`flip=70 ms` and `tps=29` on *both* settings. That was a compositor left in a
-bad state by a stray launch, not the port — every run from a clean state
-reads as above. A weston/Xwayland teardown that does not complete makes the
-X copy roughly fifteen times more expensive, which is worth knowing about
-independently.
+The per-second census (`TMC_PACE_LOG=1`) reports 61 of 61 presents threaded
+with zero fallbacks to synchronous, so the overlay check is not quietly
+disabling the path.
+
+### Two measurement traps, both hit while producing the table above
+
+- **Not every launch brings up the same backend.** One run showed
+  `fps mean=30.95`, which read as a catastrophic baseline. It had no
+  `PPU: SDL_Renderer driver = ...` line at all: `SDL_CreateGPUDevice` failed
+  *and* the SDL_Renderer failed, so it silently fell back to the surface
+  path. Its present census was all zeros, which is the tell. Any run used for
+  comparison has to be gated on the backend line and a non-zero census first.
+- **Tearing weston down with `kill -9` poisons the next launch.** Runs that
+  followed a `pkill -9 weston` measured `flip=70 ms` and `tps=29` on *both*
+  settings — a half-torn-down compositor makes the X copy roughly fifteen
+  times more expensive. Let the launcher's own `cleanup()` run and give it
+  time; every run from a clean state reads as the table.
+
+Both of these produce numbers that look like real findings, so they are
+recorded here rather than quietly fixed.
 
 Dead ends, ruled out by measurement rather than guessed at:
 
