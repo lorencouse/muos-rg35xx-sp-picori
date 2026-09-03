@@ -170,10 +170,34 @@ and every run eventually fell into a regime of ~8 fps. What was found:
   present skips the raster too and costs ~2.3 ms, so `fast_forward_fps: 15`
   took R2 from ~2x to **5-7x** (306-415 ticks/s measured).
 
-What would fix normal play properly is a **present thread**: the X copy
-blocks the game thread for 5-17 ms, and nothing in pacing can hide that. With
-the copy on its own thread the engine ticks at 60 regardless and the display
-shows whatever frame is latest. That is the next piece of work in the fork.
+### The present thread (built, not yet measured here)
+
+What fixes normal play properly is a **present thread**: the X copy blocks the
+game thread for 5-17 ms, and nothing in pacing can hide that. That now exists
+in the fork as `present_thread` (`config.json`, default off;
+`TMC_PRESENT_THREAD=1` overrides for one session).
+
+The game thread rasters and prescales as before, hands the finished pixels to
+a worker and returns; the worker owns the texture and does upload -> clear ->
+compose -> present. Handoff is latest-wins over two staging buffers, so the
+engine never blocks on the display and a slow present costs display rate,
+never game speed. The pacer needs no changes: its present-cost EMA measures
+what the game thread actually pays, which is now a memcpy, so the cost-fit
+check that was refusing presents starts passing on its own.
+
+Overlays are the catch. The settings menu, soft slots and touch controls draw
+through the same renderer *and* read live game state, so they can never run on
+the worker. The ImGui frame is therefore built first — that touches no
+renderer — and whether it produced any draw data picks the path: an empty draw
+list (normal gameplay in console mode) presents threaded, anything else drains
+the worker and presents synchronously as before.
+
+Measured so far only on the macOS host build, which is the strictest case for
+the threading (SDL_Renderer on Metal, off the main thread): picture identical
+to the synchronous path, 60.0 fps / 60.0 tps, game-thread present cost
+3.6 ms -> 1.3 ms, and a 70 s soak across overlay transitions with no crash.
+**Not yet measured on the SP** — that needs an aarch64 build, and the shipped
+`config.json` deliberately leaves the flag off until it has been.
 
 Dead ends, ruled out by measurement rather than guessed at:
 
