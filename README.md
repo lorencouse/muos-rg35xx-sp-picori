@@ -204,6 +204,11 @@ The picker shows a **preview thumbnail** and a timestamp per slot. Twenty
 identical dates would tell you nothing about which state is the fight you
 wanted, so each save captures the frame that was on screen.
 
+Within a session a load is exact. A state from an **earlier session** restores
+the save file and re-enters the same room at the same position through the
+game's own continue path (toast: "room re-entered"): inventory, flags, health
+and position carry over, room state starts fresh. See below for why.
+
 ### What had to change in the fork
 
 Save states existed but every route to them was a hard-wired keyboard case —
@@ -215,9 +220,28 @@ Six bindable actions now exist — `state_save`, `state_save_new_slot`,
 `state_load`, `state_next_slot`, `state_prev_slot` and `fast_forward` — acting
 on a selected slot rather than a fixed one, so a handful of binds reach all
 twenty. Thumbnails ride in a `state_N.thumb` sidecar rather than inside the
-state file, deliberately: bumping the state format version rejects every
-existing save on disk, and losing someone's states to gain a preview is a bad
-trade. A state with no sidecar simply shows no picture.
+state file so that adding them did not by itself force a format bump. A state
+with no sidecar simply shows no picture.
+
+The first on-device test then found the real bug: **a mid-game load stranded
+Link off-screen with controls dead.** The upstream snapshot covered the four
+GBA memory arrays plus a hand-picked few structs, but this port moved nearly
+all of the GBA's RAM residents into host globals — the entity list heads,
+entity counters, textbox system, area/room variables, fade, priority handler
+and script contexts were all outside it, so a load restored entity bodies from
+one moment and bookkeeping from another. The region table now lives beside the
+globals (`gPortStateRegions`, 97 regions) and covers everything mutable; a
+900-frame headless replay after restore is byte-identical. That did force the
+format bump: states from before 1.3.0 show as empty.
+
+Cross-session loads were a second, pre-existing problem: the snapshot is full
+of host pointers (entity links, script contexts, the text cursor into an asset
+buffer) valid only in the process that wrote them, and relocating them all
+means chasing hundreds of heap allocations in the asset loader. Rather than
+ship a heuristic, a state carries its writer's session id; a foreign state
+restores the save file and re-enters the room through the engine's own
+continue path. Exact cross-session restores would need the asset cache moved
+to a fixed-address arena — a follow-up, not a blocker.
 
 ### What had to change here
 

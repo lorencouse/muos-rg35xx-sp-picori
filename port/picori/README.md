@@ -68,6 +68,12 @@ Save states are separate from the game's own save file: they capture exactly
 where you are standing, mid-cutscene included. `tmc.sav` is still what the
 in-game save menu writes.
 
+**Loading a state from an earlier play session** brings back your inventory,
+flags, health and position and re-enters that room fresh — enemies respawn and
+any cutscene in progress restarts — and the toast says "room re-entered".
+Within the same session loads are exact. States saved by versions before 1.3.0
+show as empty slots.
+
 X is unused and stays free for the port's optional extra item slots.
 
 If MENU does not open the settings overlay (muOS may claim the button before
