@@ -23,9 +23,9 @@ trap 'rm -rf "$STAGE"' EXIT
 
 # Pinned upstream build --------------------------------------------------
 TMC_REPO="lorencouse/tmc"
-TMC_TAG="${TMC_TAG:-v0.8.3-sp2}"
+TMC_TAG="${TMC_TAG:-v0.8.3-sp3}"
 TMC_ASSET="tmc-multi-linux-arm64-${TMC_TAG}.tar.gz"
-TMC_SHA256="b30bfea1003ed97e73d6a95be781ed50d59b72dffd1a69f43e5f476fecb06457"
+TMC_SHA256="05c806fa12f38624bdeae6ae80bd3b9e9e48c0d75f8daf4577284cffe14b1bda"
 
 sha256_of() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1

@@ -387,7 +387,7 @@ Tier A: installable. Not yet submitted to PortMaster.
 - [x] First-launch asset-extraction notice (~2 min on a still screen)
 - [x] `port.json` / `gameinfo.xml` / player README
 - [x] `screenshot.png` (captured from the device) and `cover.png`
-- [x] Tagged release [`v0.8.3-sp1`](https://github.com/lorencouse/tmc/releases/tag/v0.8.3-sp1)
+- [x] Tagged release [`v0.8.3-sp3`](https://github.com/lorencouse/tmc/releases/tag/v0.8.3-sp3)
       on the fork; `build.sh` fetches and verifies from it
 - [x] Reproducible build verified from a fresh clone
 - [x] Shipped configs verified byte-identical to the working device install
