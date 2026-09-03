@@ -1,0 +1,33 @@
+# Project Picori keyboard map. The port's own gamepad bindings are unreachable
+# here: weston/libinput refuses muOS-Keys (udev tags it Keyboard+Joystick) and
+# this SDL3 build finds no gamepad on it either, so gptokeyb translates the pad
+# into a virtual keyboard and everything below mirrors config.json "bindings".
+a = x
+b = z
+x = c
+y = v
+
+l1 = a
+r1 = s
+l2 = q
+r2 = e
+l3 = \"
+r3 = \"
+
+start = enter
+back = backspace
+guide = f8
+
+up = up
+down = down
+left = left
+right = right
+
+left_analog_up = up
+left_analog_down = down
+left_analog_left = left
+left_analog_right = right
+right_analog_up = \"
+right_analog_down = \"
+right_analog_left = \"
+right_analog_right = \"

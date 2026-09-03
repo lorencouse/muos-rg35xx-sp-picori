@@ -1,0 +1,135 @@
+{
+    "a11y_cues": true,
+    "a11y_footsteps": true,
+    "a11y_hazards": true,
+    "a11y_radar": true,
+    "a11y_walls": true,
+    "active_save_profile": "tmc.sav",
+    "analog_deadzone": 0.3,
+    "aspect_mode": "stretch",
+    "autosave_enabled": true,
+    "autosave_interval_ms": 60000,
+    "bg_fill": "black",
+    "bg_fill_color": [
+        0,
+        0,
+        0
+    ],
+    "bindings": {
+        "a": [
+            "SDLK:0x00000078",
+            "SDL_GAMEPAD:0x00000000"
+        ],
+        "b": [
+            "SDLK:0x0000007a",
+            "SDL_GAMEPAD:0x00000001"
+        ],
+        "down": [
+            "SDLK:0x40000051",
+            "SDL_GAMEPAD:0x0000000c"
+        ],
+        "l": [
+            "SDLK:0x00000061",
+            "SDL_GAMEPAD:0x00000009"
+        ],
+        "left": [
+            "SDLK:0x40000050",
+            "SDL_GAMEPAD:0x0000000d"
+        ],
+        "r": [
+            "SDLK:0x00000073",
+            "SDL_GAMEPAD:0x0000000a"
+        ],
+        "right": [
+            "SDLK:0x4000004f",
+            "SDL_GAMEPAD:0x0000000e"
+        ],
+        "roll_attack": [
+            "SDLK:0x00000064",
+            "SDL_GAMEPAD:0x00000008"
+        ],
+        "select": [
+            "SDLK:0x00000008",
+            "SDL_GAMEPAD:0x00000004"
+        ],
+        "soft_l2": [
+            "SDLK:0x00000071",
+            "SDL_AXIS:0x00000004"
+        ],
+        "soft_r2": [
+            "SDLK:0x00000065",
+            "SDL_AXIS:0x00000005"
+        ],
+        "soft_x": [
+            "SDLK:0x00000063",
+            "SDL_GAMEPAD:0x00000002"
+        ],
+        "soft_y": [
+            "SDLK:0x00000076",
+            "SDL_GAMEPAD:0x00000003"
+        ],
+        "start": [
+            "SDLK:0x0000000d",
+            "SDL_GAMEPAD:0x00000006"
+        ],
+        "up": [
+            "SDLK:0x40000052",
+            "SDL_GAMEPAD:0x0000000b"
+        ]
+    },
+    "color_correction": false,
+    "console_parity": false,
+    "decouple_render": true,
+    "discord_rpc": false,
+    "frame_time_ns": 33333333,
+    "fullscreen": true,
+    "fullscreen_hide_cursor": true,
+    "gpu_raster": true,
+    "gpu_raster_gles": false,
+    "hold_advance_text": false,
+    "internal_scale": 1,
+    "lcd_persistence": false,
+    "lcd_persistence_rho": 0.35,
+    "master_volume": 1.0,
+    "menu_hint_seen": false,
+    "port_settings_menu": true,
+    "practice_show_history": false,
+    "practice_show_inputs": false,
+    "practice_show_timer": false,
+    "practice_slowmo": 1.0,
+    "preferred_language": -1,
+    "preferred_region": -1,
+    "rando_accessibility": 0,
+    "rando_dojos": true,
+    "rando_dungeon_items": false,
+    "rando_early_crests": true,
+    "rando_enabled": false,
+    "rando_entrances": false,
+    "rando_glitchless": true,
+    "rando_heart_color": 0,
+    "rando_homewarp": true,
+    "rando_instant_text": true,
+    "rando_item_pool": 0,
+    "rando_kinstones": true,
+    "rando_obscure": false,
+    "rando_open_world": false,
+    "rando_start_sword": true,
+    "rando_tricks": 0,
+    "rando_tunic_color": 0,
+    "render_backend": "auto",
+    "ribbon_mode": true,
+    "roll_attack_macro": true,
+    "shader_preset": "",
+    "show_fps": false,
+    "touch_scheme": "joystick",
+    "tts_enabled": true,
+    "tts_language": "",
+    "tts_pitch": 0.5,
+    "tts_rate": 0.5,
+    "tts_voice": "",
+    "tts_volume": 0.8,
+    "upscale_method": "nearest",
+    "vsync": true,
+    "widescreen_enabled": false,
+    "window_scale": 1
+}

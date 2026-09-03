@@ -1,0 +1,41 @@
+{
+    "version": 2,
+    "name": "picori.zip",
+    "items": [
+        "Legend of Zelda - The Minish Cap.sh",
+        "picori"
+    ],
+    "items_opt": null,
+    "attr": {
+        "title": "The Legend of Zelda: The Minish Cap (Project Picori)",
+        "porter": [
+            "lorencouse"
+        ],
+        "desc": "A native port of The Legend of Zelda: The Minish Cap, built on Project Picori (999sian/tmc) over the zeldaret/tmc decompilation. Shrunk to the size of a Minish by the sorcerer Vaati, Link is joined by the talking cap Ezlo and travels between the human world and the tiny world of the Picori to reforge the Four Sword and restore the petrified Princess Zelda.",
+        "desc_md": null,
+        "inst": "Supply your own ROM: put baserom.gba (USA) in ports/picori. baserom_eu.gba and baserom_jp.gba also work. The first launch spends about 2 minutes extracting assets from the ROM on a still screen -- this is normal.",
+        "inst_md": null,
+        "genres": [
+            "action",
+            "adventure"
+        ],
+        "image": {
+            "screenshot": "screenshot.png",
+            "covers": [
+                "cover.png"
+            ],
+            "thumbnail": null,
+            "video": null
+        },
+        "rtr": false,
+        "runtime": [
+            "weston_pkg_0.2.squashfs"
+        ],
+        "reqs": [],
+        "arch": [
+            "aarch64"
+        ],
+        "min_glibc": "2.34",
+        "exp": true
+    }
+}
