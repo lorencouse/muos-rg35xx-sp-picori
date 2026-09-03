@@ -192,12 +192,34 @@ renderer — and whether it produced any draw data picks the path: an empty draw
 list (normal gameplay in console mode) presents threaded, anything else drains
 the worker and presents synchronously as before.
 
-Measured so far only on the macOS host build, which is the strictest case for
-the threading (SDL_Renderer on Metal, off the main thread): picture identical
-to the synchronous path, 60.0 fps / 60.0 tps, game-thread present cost
-3.6 ms -> 1.3 ms, and a 70 s soak across overlay transitions with no crash.
-**Not yet measured on the SP** — that needs an aarch64 build, and the shipped
-`config.json` deliberately leaves the flag off until it has been.
+Measured on the SP, launcher-driven, 95 s runs, same scene, same binary:
+
+| `present_thread` | present (game thread) | raster + handoff | flip | tps | fps |
+|---|---|---|---|---|---|
+| off | 8.5-9.2 ms | 3.7-4.0 ms | 3.8-5.4 ms | 60.00 | 60.00 |
+| **on** | **5.4-5.5 ms** | 5.4-5.5 ms | **0.0 ms** | 60.00 | 60.00 |
+
+The flip leaves the game thread entirely. It is not free: the handoff copies
+the finished 480x320 frame into a staging buffer, which is the ~1.6 ms the
+raster column gains. Net **~3.4 ms per frame** returned to the game thread —
+about a fifth of the 16.67 ms budget.
+
+**In this scene both configurations already hold 60/60, so the fps column is
+unchanged; what the change buys is headroom, not frame rate here.** The
+scenes that matter are the ones that were missing the budget — proving that
+needs a heavy-scene capture, which this run did not do.
+
+The per-second census (`TMC_PACE_LOG=1`) reports 61 of 61 presents on the
+threaded path with zero fallbacks to synchronous, so the overlay check is not
+quietly disabling it. 86 of 92 samples sat at exactly 60.00 tps; no crashes,
+no `bugreport_*` bundle, governor restored to `ondemand` on exit.
+
+Worth recording because it cost an hour: the first two device runs measured
+`flip=70 ms` and `tps=29` on *both* settings. That was a compositor left in a
+bad state by a stray launch, not the port — every run from a clean state
+reads as above. A weston/Xwayland teardown that does not complete makes the
+X copy roughly fifteen times more expensive, which is worth knowing about
+independently.
 
 Dead ends, ruled out by measurement rather than guessed at:
 

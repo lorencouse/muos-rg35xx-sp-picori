@@ -152,5 +152,6 @@
     "vsync": true,
     "vsync_lock_ticks": false,
     "widescreen_enabled": false,
-    "window_scale": 1
+    "window_scale": 1,
+    "present_thread": true
 }
