@@ -669,6 +669,83 @@ Known cosmetic gaps, from the device log: `SDL_CreateGPUDevice` fails and the
 port falls back to software rendering, and no TTS backend exists — so
 `gpu_raster` and `tts_enabled` in the shipped `config.json` are inert here.
 
+## Taking this over
+
+This port is GPL-3.0-or-later and nobody needs the original porter's
+permission to continue it. What follows is what you would otherwise have to
+reverse-engineer.
+
+### The two repositories
+
+Packaging and engine are separate, and which one you need depends on the bug:
+
+| Symptom | Lives in |
+|---|---|
+| Launcher, weston, audio routing, governor, gptokeyb map, PortMaster metadata | **this repo** |
+| Rendering, gameplay, save states, the settings overlay, pacing | the **fork**, [lorencouse/tmc](https://github.com/lorencouse/tmc) |
+| Anything reproducible on desktop Linux with no handheld involved | upstream [999sian/tmc](https://github.com/999sian/tmc) |
+
+A packaging fix needs nothing but this repo and `./build.sh <version>`. The
+binary is fetched from a tagged release and checked against a pinned SHA-256,
+so a fresh clone reproduces the shipped zip byte-for-byte.
+
+### Rebuilding the engine under your own account
+
+`build.sh` does not build `tmc_pc`; it downloads it. To ship a binary of your
+own, fork the fork, push a tag, let its CI produce
+`tmc-multi-linux-arm64-<tag>.tar.gz`, then change **three lines** near the top
+of `build.sh`:
+
+```sh
+TMC_REPO="lorencouse/tmc"        # -> your fork
+TMC_TAG="${TMC_TAG:-v0.8.3-sp4}" # -> your tag
+TMC_SHA256="ee01c50e..."         # -> sha256sum of your tmc_pc
+```
+
+The fork's CI builds seven legs; the aarch64 one runs in a container against
+an old glibc so the result works on CFW images stuck on 2.29. That gate is
+what keeps the binary installable on the older devices — do not "simplify" it
+away. `min_glibc` in `port.json` must match whatever floor you actually build
+against.
+
+For local iteration, `TMC_BINARY=/path/to/tmc_pc ./build.sh 9.9.9` skips the
+download; the SHA-256 check will fail loudly, which is the intended reminder
+to update the pin before publishing.
+
+### What is device-specific and what is not
+
+The fork carries ~35 commits on top of upstream. Most are **not**
+SP-specific — save-state slots, the pixel-perfect aspect mode, the settings
+overlay, an out-of-bounds map-tile crash guard, a TTS shutdown race fix. Those
+belong upstream and every one that lands there is one less reason for this
+fork to exist.
+
+Genuinely device-conditional, all behind
+`#if defined(__linux__) && defined(__aarch64__)`:
+
+- the LINEAR audio resampler (upstream's SINC costs a whole A53 core)
+- a 44.1 kHz render rate
+- `TMC_UI_SCALE` for the ImGui overlay on small panels
+
+Note the middle one assumes every Linux/aarch64 target shares the SP's codec
+behaviour, which is true of the handhelds and not obviously true of ARM
+desktops. If it ever needs narrowing, that is the commit to look at.
+
+### Things known to be unfinished
+
+- Whether the RK3326 tier (RG351, RG353, OGA) wants different shipped
+  defaults. Nobody has run this on one. See **Device support**.
+- The player README under `port/picori/` is written for the SP specifically,
+  while `port.json` claims all of aarch64. On a 1:1 or 16:9 panel the launcher
+  seeds `pixel_perfect`, so the README's "(default)" column is wrong there.
+- A save-state action bound to a printable letter key never fired during the
+  x86_64 test while `Home`/`End` fired reliably. Unexplained, does not affect
+  the shipped mapping, and may be an artefact of synthetic key injection —
+  worth one check on real hardware. See **Input doubling: measured**.
+- `port_bios.c` in the fork evaluates the save-state block per SDL event, so
+  an action bound to two keys at once fires twice. No shipped binding is
+  exposed to it, but a per-frame guard would close it for good.
+
 ## Licence
 
 The port binary is GPL-3.0-or-later (Project Picori). The launcher and
