@@ -130,11 +130,19 @@ Tier A: installable. Not yet submitted to PortMaster.
       on the fork; `build.sh` fetches and verifies from it
 - [x] Reproducible build verified from a fresh clone
 - [x] Shipped configs verified byte-identical to the working device install
+- [x] Launcher verified on hardware (governor pinned + restored, audio thread
+      lifted to SCHED_FIFO, frontend hands off cleanly)
 - [ ] End-to-end install test from the zip on a clean card
 - [ ] PortMaster submission → **Multiverse**
       ([PortsMaster-MV/PortMaster-MV-New](https://github.com/PortsMaster-MV/PortMaster-MV-New)),
       not the main repo: every Nintendo-decomp port (Ship of Harkinian,
       sm64coopdx, zelda3) lives there.
+
+Note for anyone benchmarking: launching the port over adb (rather than from
+the muOS Ports menu) leaves `muxplore` running. It keeps drawing to `/dev/fb0`
+and keeps `/dev/input/event1` open — the same device gptokeyb2 reads — so the
+screen double-draws and every button press reaches both the game and the muOS
+menu. That is not a port bug; launch from the Ports menu.
 
 Known cosmetic gaps, from the device log: `SDL_CreateGPUDevice` fails and the
 port falls back to software rendering, and no TTS backend exists — so
