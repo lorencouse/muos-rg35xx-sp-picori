@@ -70,9 +70,19 @@ a compositor, with no working KMS. It is playable, not perfect:
 
 ## Saves and settings
 
-Saves live in `ports/picori/runtime/`, settings in `ports/picori/config.json`.
-Both survive reinstalling the port only if you back them up first — a
-reinstall overwrites `config.json`.
+Everything the port writes stays inside `ports/picori/`:
+
+| File / folder      | What it is                                    |
+|--------------------|-----------------------------------------------|
+| `tmc.sav`          | In-game save (EEPROM)                         |
+| `state_auto_*.bin` | Rolling autosave states                       |
+| `config.json`      | Your settings                                 |
+| `assets/`, `assets_src/`, `rom_data/` | Generated from your ROM on first launch |
+
+Back up `tmc.sav` and `state_auto_*.bin` before reinstalling — reinstalling
+also overwrites `config.json` with the shipped defaults. The generated asset
+folders can be deleted safely; they are rebuilt on the next launch (another
+~2 minute wait).
 
 A log of the last run is written to `ports/picori/log.txt`, and the run before
 it to `log.prev.txt`. Include `log.txt` in any bug report.
