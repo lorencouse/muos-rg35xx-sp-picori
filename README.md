@@ -65,10 +65,38 @@ five commits ahead of `master`, all of them handheld-class fixes:
 | 44.1 kHz synth | The SP codec's "48000" clock runs fast; 44.1 kHz is the honest rate |
 | `TMC_UI_SCALE` | The ImGui overlay is fixed 380–620 px wide, off-screen on a 320 px display |
 | `aspect_mode: "stretch"` | Fill a 4:3 panel instead of letterboxing the native 3:2 frame |
+| `aspect_mode: "pixel_perfect"` | Integer scaling — every game pixel becomes an identical NxN block |
 | `TMC_AUDIO_TRACE` | Logs frames/s pulled and the negotiated device format |
 
 None of these are SP-specific hacks, so the intent is to upstream them and go
 back to shipping official release builds. Until then this repo pins a fork tag.
+
+## Picture quality
+
+Two independent defects were measured on the panel and fixed:
+
+1. **The compositor was blurring everything.** At weston `scale=2` the X screen
+   is 320x240 and weston bilinear-upscales it to the 640x480 panel. Captured
+   from `/dev/fb0`: **0 of 320** column pairs identical, and one scanline
+   carried **326 distinct colours** from a 320px source. `scale=1` makes the X
+   screen match the panel, so weston composites 1:1 and filters nothing —
+   the same capture then gives 110/320 identical column pairs and 21 colours.
+2. **Nothing scaled by an integer.** Every mode was fractional: 1.3333x/1.5x
+   under stretch, so nearest-neighbour produced source pixels of *different
+   widths* (a repeating 2,1,1). `pixel_perfect` (added in v0.8.3-sp2) snaps to
+   the largest whole multiple.
+
+The cost, measured in real decoupled play on the same scene:
+
+| | `present` | fps | tps |
+|---|---|---|---|
+| `scale=2` (old) | 3.24 ms | ~30 | 60.00 |
+| `scale=1` (now) | 7.5 ms | ~26.5 | 60.00 |
+
+The X socket has no MIT-SHM, so the whole window is copied every frame and the
+transfer dominates — which is why pixel-perfect saves less than its pixel count
+suggests (15.4 vs 19.1 ms on the bench). **Game speed is unaffected either way**;
+only the render cadence moves.
 
 ## Runtime requirements
 

@@ -52,18 +52,30 @@ The port's optional **roll-attack macro** is bound to `d`, which no button on
 this device emits — the SP has no spare button, and no L3/R3. Roll normally
 instead. To use it, edit `tmc_pc.gptk` and give `d` to a button you can spare.
 
+## Picture / scaling
+
+Open the settings overlay and cycle **Display → Aspect mode**:
+
+| Mode | What you get |
+|---|---|
+| **Stretch to fill** (default) | Fills the 640x480 panel. ~12% vertical stretch (the GBA is 3:2, the panel 4:3). |
+| **Pixel perfect (integer)** | Exact 2x — every game pixel becomes an identical 2x2 block. Sharpest and most even, but a 480x320 image with black bars all round. |
+| **Native 3:2 (GBA)** | Correct geometry, bars top and bottom. Still a fractional 2.667x, so pixel widths are slightly uneven. |
+| Widescreen / Ultrawide | For wide monitors; not useful here. |
+
+The port runs on a 640x480 X screen matching the panel exactly, so the
+compositor does no scaling and adds no blur. Only *Pixel perfect* has truly
+uniform pixels — the others scale by 2.667x, which lands source pixels in
+runs of 2 and 3.
+
 ## Known limitations on the RG35XX SP
 
 This is a software-rendered GBA engine running on four Cortex-A53 cores, under
 a compositor, with no working KMS. It is playable, not perfect:
 
-- **~30 FPS render, full 60 TPS game speed.** The game logic runs at correct
-  speed; the picture updates at half that. Raising the cap makes it worse, not
-  better — the port's overload guard trips and it drops to ~12 FPS.
-- **The picture is stretched ~12%.** The game is natively 3:2 and the panel is
-  4:3, so `aspect_mode` ships as `"stretch"` to fill the screen. Set it to
-  `"none"` under *Display → Aspect mode* if you would rather have black bars
-  top and bottom with correct geometry.
+- **Full game speed, ~26-30 FPS picture.** The game logic holds a rock-solid
+  60 ticks per second; only the render cadence varies. *Pixel perfect* is
+  slightly cheaper than the full-screen modes.
 - **Upstream is work-in-progress.** Rendering and gameplay bugs that are not
   specific to this device belong at
   [999sian/tmc/issues](https://github.com/999sian/tmc/issues).
