@@ -140,6 +140,41 @@ reduce to `floor(y/3)`. Pixel-perfect becomes a straight 1:1 blit. `4` is past
 the sweet spot — the 960x640 intermediate costs more than the cheaper blit
 saves.
 
+### Follow-up (2026-09-03): the 60 was partly luck, and where the time really goes
+
+A later report of "dropping a lot of frames" led to a full pacing study with
+the port's profiler, the muOS frontend stopped and the governor pinned. The
+same binary and config measured 37-57 fps on one launch and 12-15 on the next,
+and every run eventually fell into a regime of ~8 fps. What was found:
+
+- **The panel is 640x480 @ 59.98 Hz** (framebuffer driver), but the crusty
+  fake-DRM layer that weston runs on reports **66.8 Hz**. SDL's software
+  renderer has no real vsync: it sleeps to a timer at the *reported* rate
+  after each copy. A weston `mode=` line can force 59.9 or 120 Hz and the
+  shim accepts it, but the custom-mode path presented *slower* (18 ms per
+  present) than the native one, so the shipped config keeps the native mode.
+- **Per present, in motion:** ~4.5 ms raster + 2x prescale, 0.3 ms texture
+  upload, ~5 ms for the X copy. With a 5-7 ms game tick that is 15-17 ms per
+  frame against a 16.67 ms budget — 60 fps only in light scenes.
+- **The X copy is the variable.** It costs ~5 ms while frames stream and
+  ~17 ms after the compositor has gone idle (a static screen, or a run of
+  skipped presents). The pacer's cost-fit check then refused the next
+  present too, which made the following one dearer: a spiral down to the
+  100 ms starvation floor. Fork `v0.8.3-sp3` caps consecutive skips at two.
+- **Vsync-locked ticks** (present every tick, re-seat the grid on the
+  return) were tried and measured: they serialise the copy with the game
+  and dropped game speed to ~50 ticks/s here. The feature is in the fork as
+  an opt-in (`vsync_lock_ticks`, off) because it is right where a present
+  genuinely blocks on a refresh.
+- **Fast-forward** was bounded by presenting at 60 Hz: a tick that does not
+  present skips the raster too and costs ~2.3 ms, so `fast_forward_fps: 15`
+  took R2 from ~2x to **5-7x** (306-415 ticks/s measured).
+
+What would fix normal play properly is a **present thread**: the X copy
+blocks the game thread for 5-17 ms, and nothing in pacing can hide that. With
+the copy on its own thread the engine ticks at 60 regardless and the display
+shows whatever frame is latest. That is the next piece of work in the fork.
+
 Dead ends, ruled out by measurement rather than guessed at:
 
 - **Native Wayland** (drop Xwayland): the shipped SDL3 prints

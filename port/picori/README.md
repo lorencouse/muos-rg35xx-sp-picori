@@ -106,9 +106,15 @@ runs of 2 and 3.
 This is a software-rendered GBA engine running on four Cortex-A53 cores, under
 a compositor, with no working KMS. It is playable, not perfect:
 
-- **60 FPS at full game speed**, with headroom to spare. If you change
-  *Display → Internal scale* away from 2 the frame rate will drop sharply —
-  that setting is what makes 60 reachable here, counter-intuitive as it looks.
+- **Full game speed, 40-60 FPS.** The game always ticks at 60; what varies is
+  how many of those frames reach the panel, because copying each frame to the
+  compositor blocks the game for 5-17 ms on this device. Busy scenes and a
+  screen that has been still for a moment show more doubled frames. If you
+  change *Display → Internal scale* away from 2 it gets much worse — that
+  setting is what makes 60 reachable at all here, counter-intuitive as it
+  looks.
+- **Fast-forward (R2) runs at 5-7x.** The screen refreshes 15 times a second
+  while it is held; that is deliberate, every skipped refresh is speed.
 - **Upstream is work-in-progress.** Rendering and gameplay bugs that are not
   specific to this device belong at
   [999sian/tmc/issues](https://github.com/999sian/tmc/issues).

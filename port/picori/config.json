@@ -99,6 +99,7 @@
     "console_parity": false,
     "decouple_render": true,
     "discord_rpc": false,
+    "fast_forward_fps": 15,
     "frame_time_ns": 16666667,
     "fullscreen": true,
     "fullscreen_hide_cursor": true,
@@ -137,6 +138,7 @@
     "render_backend": "auto",
     "ribbon_mode": true,
     "roll_attack_macro": true,
+    "savestate_slot": 0,
     "shader_preset": "",
     "show_fps": false,
     "touch_scheme": "joystick",
@@ -148,7 +150,7 @@
     "tts_volume": 0.8,
     "upscale_method": "nearest",
     "vsync": true,
+    "vsync_lock_ticks": false,
     "widescreen_enabled": false,
-    "window_scale": 1,
-    "savestate_slot": 0
+    "window_scale": 1
 }
