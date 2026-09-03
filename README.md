@@ -644,6 +644,13 @@ Tier A: installable. Not yet submitted to PortMaster.
       doubling: measured**. The shipped build also ran there unmodified: all
       dynamic deps resolved against stock SteamOS, and it took the Vulkan
       `SDL_GPU` path at 60 fps rather than the SP's software fallback
+- [x] GPL compliance in the shipped zip: `LICENSE` now ships inside
+      `picori/` (the binary is GPL-3.0-or-later and the archive carried no
+      licence text — `build.sh` stages only `port/`, and the licence lived at
+      the repo root). `build.sh`'s required-files check now includes it, so a
+      build fails rather than silently dropping it, and the player README
+      points at the **tag** `v0.8.3-sp4` for source rather than the mutable
+      branch. Rebuilt as `picori-1.4.1.zip`
 - [ ] Still open from that item: whether the RK3326 tier (RG351, RG353, OGA)
       needs different shipped defaults — needs one of those devices, not a
       Deck

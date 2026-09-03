@@ -76,7 +76,7 @@ find "$STAGE" -iname '*.gba' -print -delete | sed 's/^/!! removed stray ROM: /'
 missing=0
 for f in "Legend of Zelda - The Minish Cap.sh" picori/tmc_pc picori/config.json \
          picori/tmc_pc.gptk picori/picori-weston.ini picori/port.json \
-         picori/gameinfo.xml picori/README.md; do
+         picori/gameinfo.xml picori/README.md picori/LICENSE; do
   [ -e "$STAGE/$f" ] || { echo "!! missing: $f" >&2; missing=1; }
 done
 for f in picori/screenshot.png picori/cover.png; do

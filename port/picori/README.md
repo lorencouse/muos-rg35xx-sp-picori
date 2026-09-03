@@ -144,7 +144,19 @@ it to `log.prev.txt`. Include `log.txt` in any bug report.
 - **Project Picori** — [999sian](https://github.com/999sian/tmc) and contributors (GPL-3.0-or-later)
 - **Decompilation** — [zeldaret/tmc](https://github.com/zeldaret/tmc)
 - **Port / packaging** — lorencouse
-- Handheld build: [lorencouse/tmc @ rg35xx-sp-audio-ui](https://github.com/lorencouse/tmc/tree/rg35xx-sp-audio-ui)
+
+## Licence and source
+
+`tmc_pc` is licensed **GPL-3.0-or-later**. The full licence text is in
+`LICENSE` beside this file.
+
+The exact source this binary was built from is the tag
+[`v0.8.3-sp4`](https://github.com/lorencouse/tmc/releases/tag/v0.8.3-sp4) of
+[lorencouse/tmc](https://github.com/lorencouse/tmc) (a fork of
+[999sian/tmc](https://github.com/999sian/tmc) adding handheld-specific audio,
+UI-scale and aspect changes). The launcher and packaging are in
+[muos-rg35xx-sp-picori](https://github.com/lorencouse/muos-rg35xx-sp-picori)
+under the same licence.
 
 *The Legend of Zelda* and The Minish Cap are property of Nintendo. This port
 grants no rights to Nintendo's intellectual property and ships no game data.
