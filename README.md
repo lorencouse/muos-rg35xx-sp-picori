@@ -558,6 +558,14 @@ Tier A: installable. Not yet submitted to PortMaster.
       at all (run
       [33807524582](https://github.com/lorencouse/tmc/actions/runs/33807524582),
       branch `portmaster-abi-floor`)
+- [x] Full matrix green on that branch — Linux x86_64/arm64, Windows
+      x86_64/arm64, macOS Intel/Apple Silicon and the Android APK (run
+      [33808370409](https://github.com/lorencouse/tmc/actions/runs/33808370409)).
+      The `-lrt`/`-lpthread` additions are `is_plat("linux")`-gated and did
+      not disturb the macOS or Windows legs, and only the arm64 cache key
+      gained its `-bullseye` suffix. The desktop Linux build benefits too:
+      x86_64 still needs `GLIBC_2.34` (it is built on ubuntu-22.04) but has
+      likewise dropped its `libstdc++` dependency
 - [ ] Retag the fork from that build, then update `build.sh`'s `TMC_TAG`
       /`TMC_SHA256` and drop `port.json`'s `min_glibc` from 2.34 to 2.29.
       **The binary shipped today is still the 2.34 one** — none of the
