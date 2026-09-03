@@ -502,24 +502,80 @@ and lets SDL's own probe decide.
 
 ### What is still unverified
 
-Honesty about the limits of the above: **it has been tested on the SP and in
-the sandbox, not on a second device.** `tools/test-launcher.sh` covers the
+Honesty about the limits of the above: **it has been tested on the SP, in the
+sandbox, and — for the input question only — on one x86_64 device.** `tools/test-launcher.sh` covers the
 panel matrix, the first-launch-only seeding, the generated `weston.ini` and
 both audio paths, but a sandbox cannot tell you whether the game is playable.
 
-Two things in particular need someone with other hardware:
+One thing still needs someone with other hardware; the other has now been
+measured (see **Input doubling: measured**, below).
 
-- **Input doubling.** All input arrives as a virtual keyboard because SDL
-  sees no gamepad on the SP (weston's libinput refuses muOS-Keys). On a
-  device where SDL *does* enumerate the pad, `config.json` binds both
-  `SDLK:` and `SDL_GAMEPAD:` for every action, so presses arrive twice.
-  Harmless for movement; it breaks the held-SELECT hotkey layer, which is
-  the only source of spare keys for the save-state actions.
 - **CPU headroom.** RK3326 devices (RG351, RG353, OGA) are 4x A35 at
   1.3 GHz — slower per clock than the SP's A53 at 1.512 GHz — so the 60 fps
   cap that `internal_scale: 2` makes reachable here probably is not
   reachable there. The port's own Settings menu is the escape hatch, but
   the shipped defaults for that tier are a guess until measured.
+
+### Input doubling: measured
+
+Tested on a Steam Deck (x86_64, SteamOS 3, glibc 2.41) on 2026-09-03. The Deck
+is not a port target — it was used purely as a device where SDL enumerates a
+real gamepad *and* a keyboard from the same physical controls, which is the
+condition the SP cannot reproduce. The earlier note in this section claimed
+"presses arrive twice" for every dual-bound action. That is wrong, and the
+correction matters because it removes a blocker rather than adding one.
+
+The port has two input paths, and only one of them can double:
+
+- **Gameplay and menus are immune.** `Port_Config_InputPressed` polls and
+  returns `true` on the first matching bind, so `SDLK:` + `SDL_GAMEPAD:` on
+  one action is a logical OR, not a count. The sub-frame edge cache is a
+  `std::array<bool>` set to `true` and cleared once per frame by
+  `Port_Config_ClearInputEdges()` (`port_bios.c`), so it cannot accumulate
+  either. Menu nav converges the same way: the hook only accepts keyboard
+  events and both sources feed one idempotent `AddKeyEvent`.
+- **The save-state actions can double.** They are handled per SDL *event* via
+  `Port_Config_EventIsInputDown` (`port_bios.c`), so one action bound to two
+  inputs that both fire runs the handler twice.
+
+Measured, with `state_save_new_slot` dual-bound and driven by synthetic key
+events (two keys exercise the identical `sBinds` loop a key+pad pair would):
+
+| case | binds | fired | `[quicksave]` lines |
+|------|-------|-------|---------------------|
+| I | Home + End | Home only | 1 |
+| J | Home + End | End only  | 1 |
+| K | Home + End | both, one chord | **2** |
+
+Case K wrote `state_1.bin` and `state_2.bin` in the same second from a single
+press. So the doubling is real, but it is confined to the save-state actions.
+
+**The shipped `config.json` is not exposed.** Every dual-bound action in it
+(`a`, `b`, `up`, `down`, `select`, `start`, `l`, `r`, `soft_*`, `roll_attack`)
+is a polled gameplay action, and all six save-state actions (`state_save`,
+`state_load`, `state_next_slot`, `state_prev_slot`, `state_save_new_slot`,
+`fast_forward`) are bound to exactly one `SDLK:` each. No shipped action can
+double on any device. This is not a PortMaster blocker.
+
+The latent hazard, worth fixing in the fork rather than here: the Controls tab
+can *append* a binding, so a player on a pad-visible device who adds a pad
+button to a save-state action that gptokeyb also drives will get two saves per
+press. A per-frame guard on the save-state block, mirroring the edge cache's
+existing per-frame semantics, is the natural fix.
+
+Two incidental findings from the same session:
+
+- SDL ignores Steam's virtual gamepad unless the app runs under Steam, so the
+  port reports `SDL gamepads found: 0` on a Deck until
+  `SDL_GAMECONTROLLER_ALLOW_STEAM_VIRTUAL_GAMEPAD=1` is set. Anyone retesting
+  this on a Deck will hit that false negative first.
+- A save-state action bound to a printable letter key (`n`) never fired, while
+  navigation keys (`Home`, `End`, `PageUp`/`PageDown`) fired reliably. Not
+  root-caused, and possibly an artifact of synthetic X key injection rather
+  than a port bug. It does not affect the shipped mapping, which uses only
+  non-printable keys for these actions — but rebinding one to a letter may not
+  work, and that is worth a real-hardware check before anyone documents it as
+  supported.
 
 Out of scope: **armhf**. The fork releases an arm64 asset only, and the
 32-bit-only devices (RG350, RS97, PocketGo) could not hold the tick rate for
@@ -580,8 +636,17 @@ Tier A: installable. Not yet submitted to PortMaster.
       SHA-256, and `port.json`'s `min_glibc` is now **2.29**. The published
       aarch64 asset was downloaded and read directly to confirm it — max
       `GLIBC_2.29`, no `GLIBCXX_`/`CXXABI_`, no `libstdc++` in `NEEDED`
-- [ ] Confirm on one non-SP device: input doubling where SDL sees a real
-      gamepad, and whether the RK3326 tier needs different shipped defaults
+- [x] Input doubling confirmed on a non-SP device (Steam Deck, x86_64, glibc
+      2.41 — used as a test rig, not a port target). Doubling is real but
+      confined to the save-state actions, which the shipped `config.json`
+      binds to exactly one key each; every dual-bound action is on the polled
+      path and cannot double. Not a submission blocker — see **Input
+      doubling: measured**. The shipped build also ran there unmodified: all
+      dynamic deps resolved against stock SteamOS, and it took the Vulkan
+      `SDL_GPU` path at 60 fps rather than the SP's software fallback
+- [ ] Still open from that item: whether the RK3326 tier (RG351, RG353, OGA)
+      needs different shipped defaults — needs one of those devices, not a
+      Deck
 - [ ] PortMaster submission → **Multiverse**
       ([PortsMaster-MV/PortMaster-MV-New](https://github.com/PortsMaster-MV/PortMaster-MV-New)),
       not the main repo: every Nintendo-decomp port (Ship of Harkinian,
