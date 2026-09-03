@@ -154,6 +154,39 @@ Dead ends, ruled out by measurement rather than guessed at:
   way, and turning vsync off only removed the pacing that was keeping the EMA
   honest.
 
+## Shutdown
+
+Until v1.2.1 every quit ended in `SIGABRT` and left a ~900 KB `bugreport_*`
+directory in the port folder. Not a game bug — a launcher ordering bug.
+
+`GAME_PID` is the pid of `westonwrap.sh`, not of `tmc_pc`. Signalling the
+wrapper tore weston down (and Xwayland with it) while the game was still
+attached to the display, so inside `tmc_pc`:
+
+```
+X connection to :0 broken (explicit kill or server shutdown).
+free(): corrupted unsorted chunks
+[BUG] CRASH (SIGABRT)
+```
+
+libX11's default IO error handler ran on a display that had already gone
+away, and glibc tripped over the heap on the way out. The captured state was
+worthless too (`Area 0x0`, `HP 0/0`, `Frame 0`) because it was teardown, not
+gameplay — so the bug reporter only ever produced noise.
+
+The fix is ordering: `cleanup()` now finds `tmc_pc` by name, sends it
+`SIGTERM`, waits up to 5 s for it to actually be gone, and only then
+terminates the wrapper. Verified on hardware — clean exit, no `SIGABRT`, no
+bugreport bundle, no survivors, governor back to `ondemand`.
+
+This also corrects a note that stood since the 60 fps work: `tmc_pc` *does*
+exit on `SIGTERM`. It had simply never been sent one.
+
+**Still open (fork-side, not fixable here):** the game does not flush a save
+when it exits. Progress falls back to the interval autosave ring, so the
+worst case is bounded rather than lost, but a save-on-`SIGTERM` handler in
+`999sian/tmc` would close it.
+
 ## Runtime requirements
 
 Determined by reading the ELF directly:
@@ -195,6 +228,9 @@ Tier A: installable. Not yet submitted to PortMaster.
       teardown restored the governor to `ondemand` with no stray
       processes. The no-ROM path was checked too: it prints both
       `pm_message` lines and exits 0.
+- [x] Shutdown `SIGABRT` fixed — `cleanup()` reaps `tmc_pc` before tearing
+      down weston, so quitting no longer aborts inside libX11's IO error
+      handler or writes a `bugreport_*` bundle (see **Shutdown**)
 - [ ] PortMaster submission → **Multiverse**
       ([PortsMaster-MV/PortMaster-MV-New](https://github.com/PortsMaster-MV/PortMaster-MV-New)),
       not the main repo: every Nintendo-decomp port (Ship of Harkinian,

@@ -16,18 +16,23 @@
 # - gfxmode "system", not crusty_*: the port renders in software, needs no
 #   GL, and crusty's SDL loader hooks this binary's exported SDL symbols as
 #   if they were SDL2 -> "Could not create SDL Window" + SIGSEGV.
-# - picori-weston.ini sets output scale=2: the X screen becomes 320x240, the
-#   game renders 1x (240x160) and weston upscales on the GPU. The kernel has
-#   no SysV IPC (CONFIG_SYSVIPC unset) so MIT-SHM is unavailable and every
-#   frame is copied through the X socket; smaller frames keep that cheap.
+# - picori-weston.ini sets output scale=1: the X screen matches the 640x480
+#   panel, so weston composites 1:1 and filters nothing. (scale=2 gave a
+#   320x240 X screen that weston bilinear-upscaled -- cheaper per frame, but
+#   it blurred every pixel. config.json's internal_scale=2 buys the speed
+#   back instead.) The kernel has no SysV IPC (CONFIG_SYSVIPC unset) so
+#   MIT-SHM is unavailable and every frame is copied through the X socket.
 # - Governor pinned to performance: muOS leaves ports on powersave (480 MHz
 #   of 1512); the software PPU needs the clock.
 # - Audio: SDL's pipewire backend against muOS's PipeWire; the synth thread
 #   is lifted to SCHED_FIFO because it needs most of a core.
-# - Pacing: config.json ships vsync=true, decouple_render=true and a 30 FPS
-#   render cap. Measured on this device: full game speed (60 TPS) at ~30 FPS.
-#   A 60 cap flaps the port's overload guard (60 TPS / ~12 FPS);
-#   decouple_render=false gives ~36 FPS but the game itself slows to 0.6x.
+# - Pacing: config.json ships vsync=true, decouple_render=true, a 60 FPS
+#   render grid (frame_time_ns=16666667) and internal_scale=2. Measured on
+#   this device: a locked 60 TPS / 60 FPS. The internal_scale is what makes
+#   the 60 cap viable -- prescaling 240x160 -> 480x320 in the port's own loop
+#   takes SDL's software present from ~16.5 ms to ~8.7 ms, which is what
+#   fits inside the 16.67 ms tick window. Raising the cap without it lands
+#   at ~14 FPS, not 60. See README.md "Frame rate" before changing either.
 #   Tune under Settings (the hardware MENU button is not routed; open it
 #   with the in-game "L" prompt on the file select, or F8 on a keyboard).
 
@@ -76,6 +81,26 @@ cleanup() {
   # a caught signal until the foreground child returns -- long enough for it
   # to wake and re-assert `performance` after we restored the old governor.
   [ -n "$GOV_PIN_PID" ] && kill -9 "$GOV_PIN_PID" 2>/dev/null
+
+  # The game has to die before weston does. GAME_PID is westonwrap.sh, not
+  # tmc_pc: signalling the wrapper tears down weston -- and with it Xwayland
+  # -- while the game is still attached to the display, so libX11's default
+  # IO error handler runs inside tmc_pc and glibc aborts partway through its
+  # exit path ("free(): corrupted unsorted chunks"). Every quit then landed
+  # as a SIGABRT and wrote a ~900 KB bugreport_* bundle into the port dir.
+  # So: reap tmc_pc first, wait for it to actually be gone, then the wrapper.
+  local gpids
+  gpids="$(pidof tmc_pc 2>/dev/null)"
+  if [ -n "$gpids" ]; then
+    $ESUDO kill -TERM $gpids 2>/dev/null
+    for _ in {1..20}; do
+      pidof tmc_pc >/dev/null 2>&1 || break
+      sleep 0.25
+    done
+    gpids="$(pidof tmc_pc 2>/dev/null)"
+    [ -n "$gpids" ] && $ESUDO kill -KILL $gpids 2>/dev/null
+  fi
+
   if [ -n "$GAME_PID" ] && kill -0 "$GAME_PID" 2>/dev/null; then
     $ESUDO kill -TERM "$GAME_PID" 2>/dev/null
     for _ in 1 2 3 4 5 6 7 8 9 10; do
