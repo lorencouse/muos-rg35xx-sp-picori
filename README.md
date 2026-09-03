@@ -188,7 +188,13 @@ Tier A: installable. Not yet submitted to PortMaster.
 - [x] Shipped configs verified byte-identical to the working device install
 - [x] Launcher verified on hardware (governor pinned + restored, audio thread
       lifted to SCHED_FIFO, frontend hands off cleanly)
-- [ ] End-to-end install test from the zip on a clean card
+- [x] End-to-end install test from the zip on a clean install: extracted
+      `picori-1.2.0.zip` into a bare `ports/picori`, supplied only
+      `baserom.gba`, and launched. Asset extraction ran from scratch
+      (~2 min), the game reached gameplay at a steady 60 fps, and the
+      teardown restored the governor to `ondemand` with no stray
+      processes. The no-ROM path was checked too: it prints both
+      `pm_message` lines and exits 0.
 - [ ] PortMaster submission → **Multiverse**
       ([PortsMaster-MV/PortMaster-MV-New](https://github.com/PortsMaster-MV/PortMaster-MV-New)),
       not the main repo: every Nintendo-decomp port (Ship of Harkinian,
