@@ -380,8 +380,9 @@ silently vanish.
 
 Determined by reading the ELF directly:
 
-- **glibc ≥ 2.34**, `libstdc++` with `GLIBCXX_3.4.30` (GCC 12)
-- Dynamic deps: `libpng16`, `libEGL`, `libGLESv2`, `libgomp`, `libstdc++`
+- **glibc ≥ 2.29**, no `libstdc++` at all (it is linked statically)
+- Dynamic deps: `libpng16`, `libEGL`, `libGLESv2`, `libgomp`, `librt`,
+  `libpthread`, `libdl`
 - SDL3 is statically linked — which is *why* the launcher must use westonwrap
   gfxmode `system`: crusty hooks any binary exporting SDL symbols as if it
   were SDL2 and crashes this one.
@@ -389,18 +390,25 @@ Determined by reading the ELF directly:
 - PipeWire (the launcher forces `clock.force-rate 44100` / `force-quantum 768`
   on the system graph for the session, and restores them on exit)
 
-That glibc floor is higher than any port currently in PortMaster's catalogue
-(the highest `min_glibc` across its 1,422 entries is 2.32), so older CFW are
-unlikely to run this binary at all. Confirmed by reading the shipped
-`v0.8.3-sp3` binary directly:
+That floor sits below every entry in PortMaster's catalogue (the highest
+`min_glibc` across its 1,422 entries is 2.32), so the ABI is no longer what
+keeps a device out. Confirmed by reading the shipped `v0.8.3-sp4` binary --
+the release asset itself, not CI's report of it:
 
 ```
 $ objdump -p tmc_pc | grep NEEDED
-  libpng16.so.16  libEGL.so.1  libGLESv2.so.2  libstdc++.so.6
-  libm.so.6  libgomp.so.1  libgcc_s.so.1  libc.so.6  ld-linux-aarch64.so.1
-$ objdump -T tmc_pc | grep -oE 'GLIBC_[0-9.]+'   | sort -uV | tail -1  -> GLIBC_2.34
-$ objdump -T tmc_pc | grep -oE 'GLIBCXX_[0-9.]+' | sort -uV | tail -1  -> GLIBCXX_3.4.30
+  libpng16.so.16  librt.so.1  libEGL.so.1  libGLESv2.so.2  libpthread.so.0
+  libdl.so.2  libm.so.6  libgomp.so.1  libc.so.6
+$ objdump -T tmc_pc | grep -oE 'GLIBC_[0-9.]+'   | sort -uV | tail -1  -> GLIBC_2.29
+$ objdump -T tmc_pc | grep -oE 'GLIBCXX_[0-9.]+' | sort -uV | tail -1  -> (none)
 ```
+
+`librt`, `libpthread` and `libdl` appear in `NEEDED` where they did not
+before; that is the point, and it is harmless on a modern glibc, where all
+three survive as stubs.
+
+Before this release the port needed **glibc 2.34** and `GLIBCXX_3.4.30`,
+higher than anything in the catalogue -- older CFW could not load it at all.
 
 ## Device support
 
@@ -422,7 +430,7 @@ backport is needed.
 
 Measured, by the CI step against the ELF it just produced:
 
-| | shipped `v0.8.3-sp3` | bullseye container |
+| | `v0.8.3-sp3` (previous) | `v0.8.3-sp4` (shipped) |
 |---|---|---|
 | glibc | `GLIBC_2.34` | **`GLIBC_2.29`** |
 | libstdc++ | `GLIBCXX_3.4.30` | **none (static)** |
@@ -528,7 +536,7 @@ Tier A: installable. Not yet submitted to PortMaster.
 - [x] First-launch asset-extraction notice (~2 min on a still screen)
 - [x] `port.json` / `gameinfo.xml` / player README
 - [x] `screenshot.png` (captured from the device) and `cover.png`
-- [x] Tagged release [`v0.8.3-sp3`](https://github.com/lorencouse/tmc/releases/tag/v0.8.3-sp3)
+- [x] Tagged release [`v0.8.3-sp4`](https://github.com/lorencouse/tmc/releases/tag/v0.8.3-sp4)
       on the fork; `build.sh` fetches and verifies from it
 - [x] Reproducible build verified from a fresh clone
 - [x] Shipped configs verified byte-identical to the working device install
@@ -566,10 +574,12 @@ Tier A: installable. Not yet submitted to PortMaster.
       gained its `-bullseye` suffix. The desktop Linux build benefits too:
       x86_64 still needs `GLIBC_2.34` (it is built on ubuntu-22.04) but has
       likewise dropped its `libstdc++` dependency
-- [ ] Retag the fork from that build, then update `build.sh`'s `TMC_TAG`
-      /`TMC_SHA256` and drop `port.json`'s `min_glibc` from 2.34 to 2.29.
-      **The binary shipped today is still the 2.34 one** — none of the
-      above widens the device list until that retag happens
+- [x] Retagged the fork as `v0.8.3-sp4` (release run
+      [33809887410](https://github.com/lorencouse/tmc/actions/runs/33809887410),
+      all seven legs green); `build.sh` pins that tag and the new binary's
+      SHA-256, and `port.json`'s `min_glibc` is now **2.29**. The published
+      aarch64 asset was downloaded and read directly to confirm it — max
+      `GLIBC_2.29`, no `GLIBCXX_`/`CXXABI_`, no `libstdc++` in `NEEDED`
 - [ ] Confirm on one non-SP device: input doubling where SDL sees a real
       gamepad, and whether the RK3326 tier needs different shipped defaults
 - [ ] PortMaster submission → **Multiverse**
