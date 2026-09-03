@@ -668,10 +668,13 @@ Tier A: installable. Not yet submitted to PortMaster.
 - [ ] Still open from that item: whether the RK3326 tier (RG351, RG353, OGA)
       needs different shipped defaults — needs one of those devices, not a
       Deck
-- [ ] PortMaster submission → **Multiverse**
-      ([PortsMaster-MV/PortMaster-MV-New](https://github.com/PortsMaster-MV/PortMaster-MV-New)),
-      not the main repo: every Nintendo-decomp port (Ship of Harkinian,
-      sm64coopdx, zelda3) lives there.
+- [x] Package restructured to the layout Multiverse ports actually use
+      (metadata at the port root, game files in `picori/`, third-party
+      licences in `picori/licenses/`), and the cover regenerated at 640x480
+      4:3. Built as `picori-1.5.0.zip`
+- [ ] PortMaster submission → **Multiverse**. Blocked on cross-CFW testing,
+      which the spec requires and which needs hardware — see **Submitting to
+      PortMaster** for what is left and the two deliberate deviations.
 
 Note for anyone benchmarking: launching the port over adb (rather than from
 the muOS Ports menu) leaves `muxplore` running. It keeps drawing to `/dev/fb0`
@@ -786,6 +789,47 @@ glibc floor upstream has no reason to care about.
 If someone does only the three ready-to-send fixes and the two aspect-mode
 commits, that is five small PRs and it measurably shrinks what the next
 maintainer inherits.
+
+### Submitting to PortMaster
+
+Target is **Multiverse**
+([PortsMaster-MV/PortMaster-MV-New](https://github.com/PortsMaster-MV/PortMaster-MV-New)),
+not the main repo: every Nintendo-decomp port (Ship of Harkinian, sm64coopdx,
+zelda3) lives there. The requirements are at
+[portmaster.games/packaging.html](https://portmaster.games/packaging.html).
+
+The tree under `port/` is laid out to match what Multiverse ports actually
+look like on disk (compare `ports/soh` and `ports/dusklight`): metadata at the
+port root, game files in `picori/`, third-party licences in
+`picori/licenses/`.
+
+**What still blocks a PR**, and it is a process gap rather than a code one:
+
+> Pull requests without documented cross-CFW testing will be rejected.
+
+The port has been tested on exactly one device on one CFW — an RG35XX SP
+running muOS. The spec asks for AmberELEC, ArkOS, ROCKNIX and muOS at 640x480
+minimum, with the results posted in the PortMaster Discord's
+`#testing-n-dev` channel *before* the PR is opened. That needs hardware and a
+human; no amount of packaging work substitutes for it.
+
+**Two deliberate deviations from the spec.** Both were left alone because the
+launcher currently works on the one device anyone has run it on, and a
+conforming launcher that has never been executed is worse than a slightly
+non-conforming one that has:
+
+1. The binary is `tmc_pc`, not `tmc_pc.aarch64`. The suffix is the documented
+   convention (`soh.elf.aarch64`, `dusklight.aarch64`). Renaming touches four
+   runtime sites — the `exec` line, the gptokeyb2 target, `pidof tmc_pc` in
+   `cleanup()`, and the audio-thread scan — and each one fails silently if
+   missed.
+2. `pm_platform_helper` is not called before launch. `get_controls` and
+   `pm_finish` are.
+
+Fix both together with one smoke test on real hardware, not blind.
+
+Softer: `cover.png` is 640x480 and 4:3 as required, but it is character art on
+white rather than the gameplay-plus-logo composition the guide prefers.
 
 ### Things known to be unfinished
 
