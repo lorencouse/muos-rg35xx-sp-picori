@@ -113,8 +113,12 @@ a compositor, with no working KMS. It is playable, not perfect:
   change *Display → Internal scale* away from 2 it gets much worse — that
   setting is what makes 60 reachable at all here, counter-intuitive as it
   looks.
-- **Fast-forward (R2) runs at 5-7x.** The screen refreshes 15 times a second
-  while it is held; that is deliberate, every skipped refresh is speed.
+- **Fast-forward (R2) runs at 5-9x with the screen at ~30 Hz.** Presenting
+  is what costs speed here: every displayed frame is a raster plus a copy
+  through Xwayland and the compositor, and past ~30 presents a second those
+  starve the game thread (60 Hz presenting leaves only ~2.5x). Below that
+  the picture turns into a slideshow, so `fast_forward_fps` sits at 35,
+  which lands at ~30 real presents a second on this device.
 - **Upstream is work-in-progress.** Rendering and gameplay bugs that are not
   specific to this device belong at
   [999sian/tmc/issues](https://github.com/999sian/tmc/issues).

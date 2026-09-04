@@ -99,7 +99,7 @@
     "console_parity": false,
     "decouple_render": true,
     "discord_rpc": false,
-    "fast_forward_fps": 15,
+    "fast_forward_fps": 35,
     "frame_time_ns": 16666667,
     "fullscreen": true,
     "fullscreen_hide_cursor": true,

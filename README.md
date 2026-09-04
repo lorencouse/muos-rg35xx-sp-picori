@@ -182,7 +182,23 @@ and every run eventually fell into a regime of ~8 fps. What was found:
   genuinely blocks on a refresh.
 - **Fast-forward** was bounded by presenting at 60 Hz: a tick that does not
   present skips the raster too and costs ~2.3 ms, so `fast_forward_fps: 15`
-  took R2 from ~2x to **5-7x** (306-415 ticks/s measured).
+  took R2 from ~2x to **5-7x** (306-415 ticks/s measured). With the present
+  thread on that same setting reached 640-970 ticks/s but showed only 14
+  frames a second, which players read as a slideshow. Re-measured on the SP
+  (same scene, `TMC_REPRO_FASTFORWARD_AT`, first 10 s of fast-forward):
+
+  | `fast_forward_fps` | real presents/s | ticks/s |
+  |---:|---:|---|
+  | 15 | 14 | 640-970 |
+  | 30 | 26 | 360-660 |
+  | **35** | **30** | **305-550** |
+  | 45 | 35 | 165-235 |
+  | 60 | 43 | 135-170 |
+
+  Real cadence trails the setting because the pacer schedules the next
+  present from the end of the current one, not on a grid. The cliff past
+  ~30 presents/s is the display pipeline (worker copy, Xwayland, weston)
+  crowding the game thread off the four cores. 35 is the shipped value.
 
 ### The present thread (built, not yet measured here)
 
