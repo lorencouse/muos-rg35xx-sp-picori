@@ -405,6 +405,20 @@ echo "--- picori launch $(date) ---"
 echo "[launcher] package version $(cat "$GAMEDIR/version.txt" 2>/dev/null || echo unknown)"
 echo "DEVICE_ARCH=${DEVICE_ARCH} CFW_NAME=${CFW_NAME} DEVICE_NAME=${DEVICE_NAME:-?} panel=${SCREEN_W}x${SCREEN_H} ESUDO=${ESUDO:-none} weston=drm/gl/kiosk gfx=system"
 echo "ROM=${ROM_FILES[$rom_found]} (${ROM_NAMES[$rom_found]})"
+# Storage line: an in-game "Unable to save file" means tmc.sav could not be
+# written (the port writes it temp+fsync+rename). The two ways that happens
+# on these cards are a full one and an exFAT one that the CFW remounted
+# read-only after an error (muOS mounts with errors=remount-ro; a reboot
+# clears it). Both are visible here without another round trip.
+storage_mnt="$(df -P "$GAMEDIR" 2>/dev/null | awk 'NR==2{print $6}')"
+storage_fs="$(awk -v m="$storage_mnt" '$2==m{print $3" "substr($4,1,2)}' /proc/mounts 2>/dev/null | tail -1)"
+storage_free="$(df -Ph "$GAMEDIR" 2>/dev/null | awk 'NR==2{print $4}')"
+if ( : > "$GAMEDIR/.write-probe" ) 2>/dev/null; then
+  rm -f "$GAMEDIR/.write-probe"; storage_w=yes
+else
+  storage_w=NO
+fi
+echo "[launcher] storage: $GAMEDIR on ${storage_mnt:-?} ${storage_fs:-?} free=${storage_free:-?} writable=$storage_w"
 
 # --- audio ----------------------------------------------------------------
 # 44.1 kHz, not 48: this codec's "48000" clock runs measurably fast (music

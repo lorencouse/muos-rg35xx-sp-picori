@@ -221,6 +221,11 @@ check "marker stamped anyway"     "2"    "$(cat "$GAMEDIR/runtime/.device-tuned"
 launch_at 720 720
 check "stamped marker is final"   "1"    "$(cfg_get internal_scale)"
 
+echo "== storage line =="
+fresh_game; launch_at 640 480
+check "storage reported writable" "1" "$(grep -c '^\[launcher\] storage: .* writable=yes$' "$GAMEDIR/log.txt")"
+check "probe file removed" "no" "$([ -e "$GAMEDIR/.write-probe" ] && echo yes || echo no)"
+
 echo "== generated weston.ini =="
 fresh_game; launch_at 640 480
 WINI="$GAMEDIR/runtime/weston.ini"
