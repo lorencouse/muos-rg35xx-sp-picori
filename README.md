@@ -512,8 +512,22 @@ are never overwritten:
 |---|---|---|---|
 | 4:3, ≥480 wide (SP, RG40XX, RG353) | `stretch` | 2 | The measured SP config |
 | 4:3, <480 wide | `stretch` | 1 | Too narrow for the 480x320 prescale to pay |
-| 1:1 (RGB30, CubeXX) | `pixel_perfect` | 2 | 3:2 stretched to square is grotesque |
-| 16:9 (TrimUI Smart Pro class) | `pixel_perfect` | 2 | Likewise |
+| 1:1 720x720 (RGB30, CubeXX) | `pixel_perfect` | 3 | 3:2 stretched to square is grotesque; see below for the 3 |
+| 16:9 1280x720 (TrimUI Smart Pro class) | `pixel_perfect` | 2 | Likewise; the panel takes a 4x frame, which 2 divides |
+
+**`internal_scale` and `pixel_perfect` interact** (found by a CubeXX tester on
+v1.5.3, who got a 480x320 box in the middle of a 720x720 screen). The port
+hands SDL the *prescaled* frame, 240·S x 160·S, and pixel-perfect then fits
+the largest whole multiple of that. A 720x720 panel takes a 3x GBA frame
+(720x480), which S=2 cannot reach: only one 480x320 copy fits. So for
+pixel-perfect panels the launcher computes k = min(W/240, H/160) and picks
+the largest of 3, 2, 1 that divides k — 3 on 720x720, 2 on 1280x720 (k=4),
+1 on the rare panel where nothing else fits. Three rather than one because
+SDL's software scaler at large ratios is exactly what the prescale exists to
+avoid (see **Frame rate**). The seed marker now carries a rule number, so an
+install seeded by the old rule is re-seeded once — but only while
+`aspect_mode`/`internal_scale` still read what the old rule wrote, so a
+player's own Settings changes are never touched.
 
 `weston.ini` is generated at launch too. The shipped `picori-weston.ini`
 names the SP's output (`VGA-0`), and weston silently ignores an `[output]`

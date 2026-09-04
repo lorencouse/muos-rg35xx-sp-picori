@@ -96,6 +96,14 @@ Open the settings overlay and cycle **Display → Aspect mode**:
 | **Native 3:2 (GBA)** | Correct geometry, bars top and bottom. Still a fractional 2.667x, so pixel widths are slightly uneven. |
 | Widescreen / Ultrawide | For wide monitors; not useful here. |
 
+On other panels the launcher seeds this once from the screen size: 1:1 and
+16:9 screens get *Pixel perfect*, and *Internal scale* is chosen so whole
+copies of the prescaled frame fill the panel (3 on a 720x720 CubeXX/RGB30,
+2 on a 1280x720 TrimUI Smart Pro). *Fullscreen* cannot be turned off under
+the kiosk compositor, and the **Widescreen** toggle does nothing in this
+build: the Linux binary renders the native 240-pixel width. Both are
+expected.
+
 The port runs on a 640x480 X screen matching the panel exactly, so the
 compositor does no scaling and adds no blur. Only *Pixel perfect* has truly
 uniform pixels — the others scale by 2.667x, which lands source pixels in

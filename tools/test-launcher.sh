@@ -159,13 +159,22 @@ check "640x480 aspect"   "stretch"       "$(cfg_get aspect_mode)"
 check "640x480 iscale"   "2"             "$(cfg_get internal_scale)"
 
 # 720x720 (RGB30 / CubeXX). Stretching a 3:2 frame to 1:1 would be grotesque.
+# The panel takes a 3x frame (720x480); pixel_perfect fits whole multiples of
+# the prescaled frame, so the prescale has to be 3 (or 1) -- at 2 only one
+# 480x320 copy fits and the picture is a small box (CubeXX report, v1.5.3).
 fresh_game; launch_at 720 720
 check "720x720 aspect"   "pixel_perfect" "$(cfg_get aspect_mode)"
-check "720x720 iscale"   "2"             "$(cfg_get internal_scale)"
+check "720x720 iscale"   "3"             "$(cfg_get internal_scale)"
 
 # 1280x720 (TrimUI Smart Pro class). 16:9, likewise not a stretch target.
+# It takes a 4x frame, so the 2x prescale divides it and stays.
 fresh_game; launch_at 1280 720
 check "1280x720 aspect"  "pixel_perfect" "$(cfg_get aspect_mode)"
+check "1280x720 iscale"  "2"             "$(cfg_get internal_scale)"
+
+# 1200x800 (5x): nothing but 1 divides it, so SDL does the whole scale.
+fresh_game; launch_at 1200 800
+check "1200x800 iscale"  "1"             "$(cfg_get internal_scale)"
 
 # 320x240: 4:3, but too narrow for the 480x320 prescale to be anything but
 # wasted bandwidth.
@@ -191,6 +200,26 @@ fresh_game; launch_at 640 480
 sed -i.bak 's/"internal_scale": 2/"internal_scale": 1/' "$GAMEDIR/config.json"; rm -f "$GAMEDIR/config.json.bak"
 launch_at 640 480
 check "player value kept" "1"            "$(cfg_get internal_scale)"
+
+echo "== re-seeding an install from seed rule 1 =="
+# v1.5.0-1.5.3 wrote an empty marker and internal_scale=2 on every panel at
+# least 480 wide. An untouched rule-1 result on a 720x720 panel is re-seeded
+# to 3; one the player has changed is left alone. Either way the marker is
+# stamped so this runs once.
+fresh_game; launch_at 720 720
+sed -i.bak 's/"internal_scale": 3/"internal_scale": 2/' "$GAMEDIR/config.json"; rm -f "$GAMEDIR/config.json.bak"
+: > "$GAMEDIR/runtime/.device-tuned"
+launch_at 720 720
+check "rule-1 result re-seeded" "3"      "$(cfg_get internal_scale)"
+check "marker stamped"          "2"      "$(cat "$GAMEDIR/runtime/.device-tuned")"
+fresh_game; launch_at 720 720
+sed -i.bak 's/"internal_scale": 3/"internal_scale": 1/' "$GAMEDIR/config.json"; rm -f "$GAMEDIR/config.json.bak"
+: > "$GAMEDIR/runtime/.device-tuned"
+launch_at 720 720
+check "player's rule-1 edit kept" "1"    "$(cfg_get internal_scale)"
+check "marker stamped anyway"     "2"    "$(cat "$GAMEDIR/runtime/.device-tuned")"
+launch_at 720 720
+check "stamped marker is final"   "1"    "$(cfg_get internal_scale)"
 
 echo "== generated weston.ini =="
 fresh_game; launch_at 640 480

@@ -269,7 +269,21 @@ fi
 # Seeded ONCE and then never touched again: config.json is also where the
 # player's own Settings changes are saved, so re-asserting these on every
 # launch would silently undo them. Delete runtime/.device-tuned to re-seed.
-if [ ! -f "$GAMEDIR/runtime/.device-tuned" ]; then
+#
+# internal_scale and pixel_perfect interact: the port hands SDL the
+# prescaled frame (240*S x 160*S), and pixel_perfect then fits the largest
+# whole multiple of THAT. So S has to divide the multiple the panel allows,
+# k = min(W/240, H/160). On 720x720, k is 3 -- S=2 leaves one 480x320 copy
+# in the middle of the screen (the CubeXX report, v1.5.3), S=3 fills the
+# width. Pick the largest of 3, 2, 1 that divides k; 3 rather than 1 because
+# SDL's software scaler is what the prescale exists to keep cheap.
+#
+# The marker holds the rule number so an install seeded by an older rule can
+# be re-seeded -- but only while the two values still read exactly what that
+# older rule wrote, i.e. the player has not touched them.
+SEED_RULE=2
+seed_marker="$GAMEDIR/runtime/.device-tuned"
+if [ "$(cat "$seed_marker" 2>/dev/null)" != "$SEED_RULE" ]; then
   seed_aspect="pixel_perfect"
   # Integer thousandths, so no shell float math: 4:3 is 1333.
   seed_ar=$(( SCREEN_W * 1000 / SCREEN_H ))
@@ -277,13 +291,34 @@ if [ ! -f "$GAMEDIR/runtime/.device-tuned" ]; then
     seed_aspect="stretch"
   fi
   seed_iscale=1
-  [ "$SCREEN_W" -ge 480 ] && seed_iscale=2
+  if [ "$seed_aspect" = "stretch" ]; then
+    [ "$SCREEN_W" -ge 480 ] && seed_iscale=2
+  else
+    seed_k=$(( SCREEN_W / 240 ))
+    [ $(( SCREEN_H / 160 )) -lt "$seed_k" ] && seed_k=$(( SCREEN_H / 160 ))
+    if   [ "$seed_k" -ge 3 ] && [ $(( seed_k % 3 )) -eq 0 ]; then seed_iscale=3
+    elif [ "$seed_k" -ge 2 ] && [ $(( seed_k % 2 )) -eq 0 ]; then seed_iscale=2
+    fi
+  fi
+
+  do_seed=1
+  if [ -f "$seed_marker" ] && [ -f "$GAMEDIR/config.json" ]; then
+    # Rule 1 (v1.5.0 - v1.5.3): same aspect choice, internal_scale=2 on any
+    # panel at least 480 wide. Re-seed only an untouched rule-1 result.
+    old_iscale=1; [ "$SCREEN_W" -ge 480 ] && old_iscale=2
+    cur_aspect="$(grep -o '"aspect_mode": *"[a-z_0-9:]*"' "$GAMEDIR/config.json" | head -1 | sed 's/.*: *"//; s/"//')"
+    cur_iscale="$(grep -o '"internal_scale": *[0-9]*' "$GAMEDIR/config.json" | head -1 | sed 's/.*: *//')"
+    if [ "$cur_aspect" != "$seed_aspect" ] || [ "$cur_iscale" != "$old_iscale" ]; then
+      do_seed=0
+      echo "[launcher] seed rule $SEED_RULE: keeping player's aspect_mode=$cur_aspect internal_scale=$cur_iscale"
+    fi
+  fi
 
   # A temp file + mv rather than `sed -i`: busybox sed (some CFW ship it
   # as the only sed) rejects the suffix form GNU and BSD spell differently.
-  if [ -f "$GAMEDIR/config.json" ]; then
+  if [ "$do_seed" -eq 1 ] && [ -f "$GAMEDIR/config.json" ]; then
     seed_tmp="$GAMEDIR/config.json.seed.$$"
-    if sed -e "s/\"aspect_mode\": \"[a-z_]*\"/\"aspect_mode\": \"$seed_aspect\"/" \
+    if sed -e "s/\"aspect_mode\": \"[a-z_0-9:]*\"/\"aspect_mode\": \"$seed_aspect\"/" \
            -e "s/\"internal_scale\": [0-9][0-9]*/\"internal_scale\": $seed_iscale/" \
            "$GAMEDIR/config.json" > "$seed_tmp" 2>/dev/null && [ -s "$seed_tmp" ]; then
       mv -f "$seed_tmp" "$GAMEDIR/config.json"
@@ -293,7 +328,7 @@ if [ ! -f "$GAMEDIR/runtime/.device-tuned" ]; then
       echo "[launcher] could not seed config.json -- shipped defaults kept"
     fi
   fi
-  mkdir -p "$GAMEDIR/runtime" && touch "$GAMEDIR/runtime/.device-tuned"
+  mkdir -p "$GAMEDIR/runtime" && echo "$SEED_RULE" > "$seed_marker"
 fi
 
 # --- CPU governor + audio thread priority ---------------------------------
