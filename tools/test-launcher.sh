@@ -47,6 +47,7 @@ touch "$SB/PortMaster/libs/weston_pkg_0.2.squashfs" "$SB/PortMaster/harbourmaste
 sed -e "s#/sys/devices/system/cpu/cpufreq/policy\*#$SB/sys/policy*#g" \
     -e "s#/sys/devices/system/cpu/cpu\[0-9\]\*/cpufreq/scaling_governor#$SB/sys/none/scaling_governor#g" \
     -e "s#weston_dir=\"/tmp/weston\"#weston_dir=\"$SB/weston\"#" \
+    -e "s#/sys/class/graphics/fb0#$SB/sys/fb0#g" \
     "$LAUNCHER" > "$SB/launcher.sh"
 
 export PATH="$SB/bin:$PATH" XDG_DATA_HOME="$SB"
@@ -60,6 +61,7 @@ stub_weston() { # $1: "runs" (blocks until killed) | "quits"
 #!/bin/bash
 [ "\$1" = "cleanup" ] && exit 0
 printf '%s\n' "\$@" > "$SB/state/weston.args"
+env > "$SB/state/weston.env"
 exit 0
 EOF
   else
@@ -67,6 +69,7 @@ EOF
 #!/bin/bash
 [ "\$1" = "cleanup" ] && exit 0
 printf '%s\n' "\$@" > "$SB/state/weston.args"
+env > "$SB/state/weston.env"
 trap 'kill \$SP 2>/dev/null; exit 0' TERM INT
 exec -a game-sleep sleep 300 & SP=\$!
 wait \$SP
@@ -170,6 +173,17 @@ fresh_game; launch_at 320 240
 check "320x240 aspect"   "stretch"       "$(cfg_get aspect_mode)"
 check "320x240 iscale"   "1"             "$(cfg_get internal_scale)"
 
+# No DISPLAY_WIDTH/HEIGHT (older PortMaster): the SP's own sysfs. Its
+# virtual_size is 640,960 (two page-flip buffers), so the mode line must win.
+mkdir -p "$SB/sys/fb0"
+echo "U:640x480p-59" > "$SB/sys/fb0/modes"; echo "640,960" > "$SB/sys/fb0/virtual_size"
+fresh_game; DISPLAY_WIDTH= DISPLAY_HEIGHT= bash "$SB/launcher.sh" >/dev/null 2>&1
+check "fb0 fallback aspect" "stretch"    "$(cfg_get aspect_mode)"
+check "fb0 fallback iscale" "2"          "$(cfg_get internal_scale)"
+rm -f "$SB/sys/fb0/modes"
+fresh_game; DISPLAY_WIDTH= DISPLAY_HEIGHT= bash "$SB/launcher.sh" >/dev/null 2>&1
+check "virtual_size last resort" "1"     "$(grep -c 'seeded .* for 640x960' "$GAMEDIR/log.txt")"
+
 echo "== seeding is first-launch only =="
 # The same file holds the player's own Settings changes, so a second launch
 # must not reassert the device defaults over them.
@@ -203,6 +217,29 @@ check "no empty driver"  "0"             "$(grep -c '^SDL_AUDIODRIVER=$' "$SB/st
 check "no pw calls"      "0"             "$(cat "$SB/state/pw.log" 2>/dev/null | wc -l | tr -d ' ')"
 check "still finishes"   "yes"           "$([ -f "$SB/state/pm_finish.stamp" ] && echo yes || echo no)"
 mv "$SB/bin/pw-metadata.hidden" "$SB/bin/pw-metadata"
+
+echo "== sudo-based CFW (ArkOS): ESUDO resets the environment =="
+# PortMaster's ESUDO there is `sudo --preserve-env=<short list>`, so anything
+# the launcher merely exports does not reach westonwrap or the governor nodes.
+# esudo mimics that: it runs its command under a scrubbed environment.
+cat > "$SB/bin/esudo" <<EOF2
+#!/bin/bash
+exec /usr/bin/env -i PATH="\$PATH" HOME="\$HOME" "\$@"
+EOF2
+chmod +x "$SB/bin/esudo"
+sed -i.bak "s#ESUDO=\"\"#ESUDO=\"$SB/bin/esudo\"#" "$SB/PortMaster/control.txt"; rm -f "$SB/PortMaster/control.txt.bak"
+fresh_game; stub_weston runs
+bash "$SB/launcher.sh" >/dev/null 2>&1 & lp=$!
+sleep 4
+check "governor pinned via esudo" "performance" "$(cat "$SB/sys/policy0/scaling_governor")"
+check "WESTON_CONFIG reaches westonwrap" "$GAMEDIR/runtime/weston.ini" "$(sed -n 's/^WESTON_CONFIG=//p' "$SB/state/weston.env" 2>/dev/null)"
+check "PIPEWIRE_RUNTIME_DIR reaches it" "/run" "$(sed -n 's/^PIPEWIRE_RUNTIME_DIR=//p' "$SB/state/weston.env" 2>/dev/null)"
+check "controller config as app arg" "1" "$(grep -c "^SDL_GAMECONTROLLERCONFIG='" "$SB/state/weston.args")"
+kill -TERM $lp 2>/dev/null; wait $lp 2>/dev/null
+sleep 5
+check "governor restored"  "powersave" "$(cat "$SB/sys/policy0/scaling_governor")"
+check "game stopped"       "0"         "$(pgrep -f game-sleep | wc -l | tr -d ' ')"
+sed -i.bak "s#ESUDO=\"$SB/bin/esudo\"#ESUDO=\"\"#" "$SB/PortMaster/control.txt"; rm -f "$SB/PortMaster/control.txt.bak"
 
 echo
 if [ "$fails" -eq 0 ]; then echo "all checks passed"; else echo "$fails check(s) FAILED"; fi

@@ -216,13 +216,23 @@ export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 # Everything below that depends on the screen derives from these two.
 # Current PortMaster builds export DISPLAY_WIDTH/DISPLAY_HEIGHT from
 # control.txt, older ones do not, and this port has to cope with both --
-# so fall back to the framebuffer's own geometry (fb0/virtual_size reads
-# "640,480") and finally to the RG35XX SP's panel, which is what every
-# measured number in README.md was taken on.
+# so fall back to the framebuffer's own mode line (fb0/modes reads
+# "U:640x480p-59"), then to fb0/virtual_size -- which on the SP is "640,960"
+# because it counts the second page-flip buffer, so it is only a last resort
+# -- and finally to the RG35XX SP's panel, which is what every measured
+# number in README.md was taken on.
 screen_is_num() { case "$1" in ''|*[!0-9]*) return 1 ;; *) return 0 ;; esac; }
 
 SCREEN_W="${DISPLAY_WIDTH:-}"
 SCREEN_H="${DISPLAY_HEIGHT:-}"
+if ! screen_is_num "$SCREEN_W" || ! screen_is_num "$SCREEN_H"; then
+  if [ -r /sys/class/graphics/fb0/modes ]; then
+    # "U:640x480p-59" -> 640 480
+    fb_mode="$(head -n1 /sys/class/graphics/fb0/modes 2>/dev/null)"
+    fb_mode="${fb_mode#*:}"; fb_mode="${fb_mode%%p*}"; fb_mode="${fb_mode%%i*}"
+    SCREEN_W="${fb_mode%%x*}"; SCREEN_H="${fb_mode#*x}"
+  fi
+fi
 if ! screen_is_num "$SCREEN_W" || ! screen_is_num "$SCREEN_H"; then
   if [ -r /sys/class/graphics/fb0/virtual_size ]; then
     IFS=, read -r SCREEN_W SCREEN_H < /sys/class/graphics/fb0/virtual_size
@@ -303,20 +313,22 @@ done
 # The same loop lifts the port's audio thread to SCHED_FIFO once it exists.
 # The MP2K synth still takes ~50% of an A53 core with the LINEAR resampler
 # (it was ~100% with upstream's SINC), so as SCHED_OTHER it can lose the core
-# to the renderer/compositor mid-buffer. muOS runs ports as root, so chrt
-# just works (PipeWire itself runs FIFO 88).
+# to the renderer/compositor mid-buffer. muOS runs ports as root; where they
+# are not (ArkOS), $ESUDO supplies the privilege (PipeWire itself runs FIFO 88).
 (
   audio_tid=""
   while :; do
     for g in "${GOV_NODES[@]}"; do
-      [ "$(cat "$g" 2>/dev/null)" = "performance" ] || echo performance > "$g" 2>/dev/null
+      # Through $ESUDO: on ArkOS-class CFWs the launcher is not root and a
+      # bare redirect fails silently, leaving the game unpinned.
+      [ "$(cat "$g" 2>/dev/null)" = "performance" ] || $ESUDO sh -c "echo performance > '$g'" 2>/dev/null
     done
     if [ -z "$audio_tid" ]; then
       for p in $(pidof tmc_pc); do
         for c in /proc/$p/task/*/comm; do
           case "$(cat "$c" 2>/dev/null)" in
             SDLAudioP*) audio_tid="${c%/comm}"; audio_tid="${audio_tid##*/}"
-                        chrt -f -p 60 "$audio_tid" 2>/dev/null && echo "[launcher] audio thread $audio_tid -> SCHED_FIFO 60" ;;
+                        $ESUDO chrt -f -p 60 "$audio_tid" 2>/dev/null && echo "[launcher] audio thread $audio_tid -> SCHED_FIFO 60" ;;
           esac
         done
       done
@@ -349,7 +361,8 @@ disown $!
 [ -f "$GAMEDIR/picori.env" ] && source "$GAMEDIR/picori.env"
 
 echo "--- picori launch $(date) ---"
-echo "DEVICE_ARCH=${DEVICE_ARCH} CFW_NAME=${CFW_NAME} weston=drm/gl/kiosk gfx=system"
+echo "[launcher] package version $(cat "$GAMEDIR/version.txt" 2>/dev/null || echo unknown)"
+echo "DEVICE_ARCH=${DEVICE_ARCH} CFW_NAME=${CFW_NAME} DEVICE_NAME=${DEVICE_NAME:-?} panel=${SCREEN_W}x${SCREEN_H} ESUDO=${ESUDO:-none} weston=drm/gl/kiosk gfx=system"
 echo "ROM=${ROM_FILES[$rom_found]} (${ROM_NAMES[$rom_found]})"
 
 # --- audio ----------------------------------------------------------------
@@ -451,7 +464,13 @@ fi
 # mapping (SDL requires them newline-separated).
 shq() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
 
-$ESUDO $weston_dir/westonwrap.sh drm gl kiosk system \
+# WESTON_CONFIG and PIPEWIRE_RUNTIME_DIR must reach westonwrap itself, not
+# just the game, and on sudo-based CFWs $ESUDO is `sudo --preserve-env=<a
+# short PortMaster list>`, which drops every other exported variable. So they
+# go in Westonpack's documented stack-wide slot: `$ESUDO env VAR=... westonwrap.sh`.
+# env receives them as single argv words, so no quoting games are needed there.
+$ESUDO env WESTON_CONFIG="$WESTON_CONFIG" PIPEWIRE_RUNTIME_DIR=/run \
+  "$weston_dir/westonwrap.sh" drm gl kiosk system \
 SDL_VIDEODRIVER=x11 \
 ${AUDIO_ENV[@]+"${AUDIO_ENV[@]}"} \
 OMP_WAIT_POLICY=passive \
