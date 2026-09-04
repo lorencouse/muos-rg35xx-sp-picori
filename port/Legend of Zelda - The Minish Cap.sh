@@ -119,7 +119,13 @@ cleanup() {
   fi
   [ -n "$WESTON_MOUNTED" ] && $ESUDO "$weston_dir/westonwrap.sh" cleanup
   if [ -n "$WESTON_MOUNTED" ] && [[ "$PM_CAN_MOUNT" != "N" ]]; then
-    $ESUDO umount "$weston_dir" 2>/dev/null
+    # weston's children are still exiting when westonwrap cleanup returns, so
+    # the first umount can lose the race (seen on the SP: EBUSY once, clean a
+    # moment later). A few retries; the next launch umounts again anyway.
+    for _ in 1 2 3 4; do
+      $ESUDO umount "$weston_dir" 2>/dev/null && break
+      sleep 0.5
+    done
   fi
 
   local i
