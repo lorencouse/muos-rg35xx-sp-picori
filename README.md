@@ -23,7 +23,7 @@ This file is about building the package.
 ## Build
 
 ```sh
-./build.sh 1.0.0            # -> dist/picori-1.0.0.zip
+./build.sh 1.0.0            # -> dist/1.0.0/picori.zip
 ```
 
 `build.sh` fetches the `tmc_pc` binary from a tagged release on the fork,

@@ -140,6 +140,28 @@ trap cleanup EXIT INT TERM HUP
 
 pw_settings() { XDG_RUNTIME_DIR=/run pw-metadata -n settings 0 "$@" >/dev/null 2>&1; }
 
+# --- weston runtime -------------------------------------------------------
+# Done before anything that talks to the player: the squashfs may have to be
+# downloaded (55 MB), and that must not happen after "please wait 2 minutes"
+# has already been shown. XDG_DATA_HOME is still the system one here on
+# purpose -- harbourmaster is a PortMaster tool and gets PortMaster's paths.
+weston_dir="/tmp/weston"
+weston_runtime="weston_pkg_0.2"
+$ESUDO mkdir -p "${weston_dir}"
+if [ ! -f "$controlfolder/libs/${weston_runtime}.squashfs" ]; then
+  if [ ! -f "$controlfolder/harbourmaster" ]; then
+    pm_message "This port requires the latest PortMaster to run, please go to https://portmaster.games/ for more info."
+    sleep 5
+    exit 1
+  fi
+  $ESUDO $controlfolder/harbourmaster --quiet --no-check runtime_check "${weston_runtime}.squashfs"
+fi
+if [[ "$PM_CAN_MOUNT" != "N" ]]; then
+    $ESUDO umount "${weston_dir}" 2>/dev/null
+fi
+$ESUDO mount "$controlfolder/libs/${weston_runtime}.squashfs" "${weston_dir}"
+WESTON_MOUNTED=1
+
 # --- ROM ------------------------------------------------------------------
 # The binary is multi-region: it validates the ROM by SHA-1 itself and picks
 # USA/EU/JP data at runtime. Any one of the three filenames will do.
@@ -258,24 +280,6 @@ if [ ! -f "$GAMEDIR/runtime/.device-tuned" ]; then
   mkdir -p "$GAMEDIR/runtime" && touch "$GAMEDIR/runtime/.device-tuned"
 fi
 
-# --- weston runtime -------------------------------------------------------
-weston_dir="/tmp/weston"
-weston_runtime="weston_pkg_0.2"
-$ESUDO mkdir -p "${weston_dir}"
-if [ ! -f "$controlfolder/libs/${weston_runtime}.squashfs" ]; then
-  if [ ! -f "$controlfolder/harbourmaster" ]; then
-    pm_message "This port requires the latest PortMaster to run, please go to https://portmaster.games/ for more info."
-    sleep 5
-    exit 1
-  fi
-  $ESUDO $controlfolder/harbourmaster --quiet --no-check runtime_check "${weston_runtime}.squashfs"
-fi
-if [[ "$PM_CAN_MOUNT" != "N" ]]; then
-    $ESUDO umount "${weston_dir}" 2>/dev/null
-fi
-$ESUDO mount "$controlfolder/libs/${weston_runtime}.squashfs" "${weston_dir}"
-WESTON_MOUNTED=1
-
 # --- CPU governor + audio thread priority ---------------------------------
 # Pin governors to performance for the session (Dusklight.sh pattern; nodes
 # without "performance" are left alone). muOS writes the governor behind a
@@ -321,6 +325,9 @@ done
   done
 ) &
 GOV_PIN_PID=$!
+# disown: otherwise bash reports the kill -9 in cleanup() as "Killed" in the
+# log, which every tester reads as a crash.
+disown $GOV_PIN_PID
 
 # --- input ----------------------------------------------------------------
 # All input comes through gptokeyb. weston's libinput refuses muOS-Keys
@@ -334,6 +341,7 @@ GOV_PIN_PID=$!
 # keys but every key the SP can send is already gameplay. Held SELECT frees
 # four of them for the save-state actions.
 $GPTOKEYB2 "tmc_pc" -H back -c "$GAMEDIR/tmc_pc.gptk" &
+disown $!
 
 # Allow an override from picori.env for on-device experimentation without
 # re-pushing this script (e.g. TMC_PROFILE=1 TMC_PACE_LOG=1 for the port's
@@ -388,6 +396,7 @@ AUDIO_ENV=()
 # route (asound.conf -> pipewire ALSA plugin) underran ~180x/s here.
 # PIPEWIRE_RUNTIME_DIR is spelled out because westonwrap resets
 # XDG_RUNTIME_DIR (an early run SIGSEGV'd inside libpipewire without it).
+# Exported once here; westonwrap passes its environment through to the game.
 export PIPEWIRE_RUNTIME_DIR=/run
 # picori-weston.ini documents the SP's settings but names that device's
 # output (VGA-0). weston silently ignores an [output] section matching no
@@ -445,7 +454,6 @@ shq() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
 $ESUDO $weston_dir/westonwrap.sh drm gl kiosk system \
 SDL_VIDEODRIVER=x11 \
 ${AUDIO_ENV[@]+"${AUDIO_ENV[@]}"} \
-PIPEWIRE_RUNTIME_DIR=/run \
 OMP_WAIT_POLICY=passive \
 XDG_DATA_HOME="$(shq "$XDG_DATA_HOME")" \
 SDL_GAMECONTROLLERCONFIG="$(shq "$SDL_GAMECONTROLLERCONFIG")" \

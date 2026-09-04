@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Assemble the distributable PortMaster zip.
 #
-#   ./build.sh 1.0.0                  # fetch the pinned binary, build dist/picori-1.0.0.zip
+#   ./build.sh 1.0.0                  # fetch the pinned binary, build dist/1.0.0/picori.zip
 #   TMC_BINARY=/path/to/tmc_pc ./build.sh 1.0.0   # use a local build instead
 #
 # The 59 MB tmc_pc binary is deliberately NOT in git. It is fetched from the
@@ -70,6 +70,11 @@ chmod +x "$STAGE/picori/tmc_pc" "$STAGE/Legend of Zelda - The Minish Cap.sh"
 # Stamp the version so an installed copy can be identified on-device.
 printf '%s\n' "$VERSION" > "$STAGE/picori/version.txt"
 
+# gameinfo.xml names ./picori/cover.png, the on-device path PortMaster's
+# release pipeline produces from the root cover.png. A manual unzip into
+# ports/ gets no such file, so ship a copy at that path too.
+[ -f "$STAGE/cover.png" ] && cp "$STAGE/cover.png" "$STAGE/picori/cover.png"
+
 # Refuse to ship a ROM even if one is sitting in the working tree.
 find "$STAGE" -iname '*.gba' -print -delete | sed 's/^/!! removed stray ROM: /'
 
@@ -88,7 +93,10 @@ done
 [ "$missing" -eq 0 ] || exit 1
 
 # 3. Zip -----------------------------------------------------------------
-out="$DIST/picori-$VERSION.zip"
+# The zip is named picori.zip because port.json's "name" must match the
+# filename; the version lives in the directory and in version.txt.
+mkdir -p "$DIST/$VERSION"
+out="$DIST/$VERSION/picori.zip"
 rm -f "$out"
 ( cd "$STAGE" && zip -q -r -X "$out" . -x '.DS_Store' -x '__MACOSX/*' )
 
