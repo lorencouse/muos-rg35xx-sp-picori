@@ -423,13 +423,32 @@ else
   echo "[launcher] could not write $WESTON_INI -- using the shipped SP config"
   export WESTON_CONFIG="$GAMEDIR/picori-weston.ini"
 fi
+# westonwrap.sh re-parses the VAR=value arguments it is handed as shell
+# words, so quoting applied here is gone by the time it runs them. Any
+# value containing a space or a newline is therefore split into commands.
+# That is not hypothetical: on Knulli, get_controls sets
+# SDL_GAMECONTROLLERCONFIG to two mappings on two lines whose names have
+# spaces ("Microsoft Xbox 360"), and the launcher died with
+#   westonwrap.sh: line 48: Xbox: command not found ... exit code 127
+# before tmc_pc was ever reached. muOS sets a single space-free mapping,
+# which is why this survived so long untested.
+#
+# So pass values pre-quoted: shq wraps a value in single quotes and escapes
+# any single quote inside it, which survives one round of word splitting
+# intact -- spaces, newlines and all. The outer double quotes on the
+# substitutions below are load-bearing too: without them the newline
+# between two mappings splits the value into two arguments here, and
+# westonwrap rejoins them with a space, silently corrupting the second
+# mapping (SDL requires them newline-separated).
+shq() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+
 $ESUDO $weston_dir/westonwrap.sh drm gl kiosk system \
 SDL_VIDEODRIVER=x11 \
 ${AUDIO_ENV[@]+"${AUDIO_ENV[@]}"} \
 PIPEWIRE_RUNTIME_DIR=/run \
 OMP_WAIT_POLICY=passive \
-XDG_DATA_HOME="$XDG_DATA_HOME" \
-SDL_GAMECONTROLLERCONFIG="$SDL_GAMECONTROLLERCONFIG" \
+XDG_DATA_HOME="$(shq "$XDG_DATA_HOME")" \
+SDL_GAMECONTROLLERCONFIG="$(shq "$SDL_GAMECONTROLLERCONFIG")" \
 ./tmc_pc &
 GAME_PID=$!
 
