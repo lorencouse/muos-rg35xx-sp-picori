@@ -38,14 +38,16 @@ jobs:
       - name: Toolchain
         run: |
           set -eux
-          # bullseye is out of LTS: its security suite 404s on deb.debian.org
-          # and is not on archive.debian.org yet. Main only is enough here.
+          # bullseye is out of LTS: deb.debian.org's CDN drops security pool
+          # files that security.debian.org still serves, and the image's libc6
+          # comes from that suite.
           echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
-          echo 'deb http://deb.debian.org/debian bullseye main' > /etc/apt/sources.list
-          if ! apt-get update; then
-            echo 'deb http://archive.debian.org/debian bullseye main' > /etc/apt/sources.list
-            apt-get update
-          fi
+          echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/99retries
+          printf '%s\n' \
+            'deb http://deb.debian.org/debian bullseye main' \
+            'deb http://security.debian.org/debian-security bullseye-security main' \
+            > /etc/apt/sources.list
+          apt-get update
           apt-get install -y --no-install-recommends git ca-certificates build-essential cmake ninja-build pkg-config
       - name: Sources
         run: |
