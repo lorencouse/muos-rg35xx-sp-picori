@@ -22,8 +22,7 @@
   - [ ] physical MENU on this SP goes through the custom menu_tap.sh, which injects Start for ports
         not in its list; add `picori)` -> 312 there if MENU should open the overlay on this device
         (device-side, not a package change)
-  - [ ] `min_glibc`: binary 2.29 (sp4 measurement), shim 2.29; port.json says 2.31, lower it once
-        the sp5 binary's floor is read from the release asset
+  - [x] `min_glibc`: sp5 binary GLIBC_2.29 (no GLIBCXX), shim GLIBC_2.29; port.json now says 2.29
 - [x] Cebion's porting reference (~/Downloads/portmaster-ai-complete-reference.md): checked. Changes made:
       gptokeyb2 `.ini` instead of `.gptk` (project policy), no `-H` flag, Select+L2/R2 slot combos
       dropped (slot picking lives in the overlay's Saves tab), gptokeyb2 licence added,
