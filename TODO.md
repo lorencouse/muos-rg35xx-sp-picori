@@ -53,7 +53,9 @@
       2.29. sp6 tested on the SP before tagging: splash centred, the guard logs
       "[present] renderer 'opengles2' is GPU-backed" and the game renders even with
       `present_thread: true`.
-  - [ ] confirm the v2.0.1 CI run published picori.zip + libSDL3.so.0 on the release
+  - [x] v2.0.1 release published (second run; the first fetched sp5 because the workflow
+        hardcoded the fork tag): picori.zip carries the sp6 binary (sha ab7f8666...),
+        present_thread false, min_glibc 2.29. https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.0.1
 - [ ] Testing on other CFWs (ArkOS, ROCKNIX, AmberELEC) and resolutions (720x720, 1280x720),
       documented in `#testing-n-dev` before opening the PR.
 
