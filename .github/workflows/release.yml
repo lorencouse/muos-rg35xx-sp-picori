@@ -38,13 +38,14 @@ jobs:
       - name: Toolchain
         run: |
           set -eux
-          # bullseye is out of LTS; deb.debian.org 404s on its pool files.
-          printf '%s\n' \
-            'deb http://archive.debian.org/debian bullseye main' \
-            'deb http://archive.debian.org/debian-security bullseye-security main' \
-            > /etc/apt/sources.list
+          # bullseye is out of LTS: its security suite 404s on deb.debian.org
+          # and is not on archive.debian.org yet. Main only is enough here.
           echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
-          apt-get update
+          echo 'deb http://deb.debian.org/debian bullseye main' > /etc/apt/sources.list
+          if ! apt-get update; then
+            echo 'deb http://archive.debian.org/debian bullseye main' > /etc/apt/sources.list
+            apt-get update
+          fi
           apt-get install -y --no-install-recommends git ca-certificates build-essential cmake ninja-build pkg-config
       - name: Sources
         run: |
