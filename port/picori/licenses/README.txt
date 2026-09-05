@@ -9,6 +9,7 @@ Licences for the files in this package.
     agbplay (core)                  see notice         NOTICE-agbplay.txt
   libs.aarch64/libSDL3.so.0
     SDL3 (bmdhacks/SDL, sdl2-backend) zlib             LICENSE-SDL3-zlib.txt
+  gptokeyb2 (supplied by PortMaster)  GPL-2.0          LICENSE-gptokeyb2-GPL-2.0.txt
 
 Source for tmc_pc.aarch64: https://github.com/lorencouse/tmc/tree/rg35xx-sp-audio-ui
 (a fork of https://github.com/999sian/tmc over https://github.com/zeldaret/tmc).

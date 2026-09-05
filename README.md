@@ -12,7 +12,7 @@ port/                                   the package, as PortMaster wants it
   port.json  gameinfo.xml  README.md  screenshot.png  cover.png
   picori/
     config.json                         shipped settings (keyboard bindings only)
-    tmc_pc.gptk                         gptokeyb2 map, SELECT is the hotkey layer
+    picori.ini                          gptokeyb2 keyboard map
     licenses/
     tmc_pc.aarch64                      added by build.sh, not in git
     libs.aarch64/libSDL3.so.0           added by build.sh, not in git
@@ -57,8 +57,9 @@ in a bullseye container so the binary loads on old CFW glibc.
 
 ## Status
 
-Reworked on 2026-09-05 against the PortMaster review: template launcher,
-port.json v4, comment-free gptk, mixv1 cover, sdl3shim instead of weston.
+Reworked on 2026-09-05 against the PortMaster review and Cebion's porting
+reference: template launcher, port.json v4, gptokeyb2 ini, mixv1 cover,
+sdl3shim instead of weston.
 Not yet run on hardware in this form. Before a PortMaster PR it needs the
 fork release cut with `TMC_SDL3_SHARED=1`, a device test on muOS, and
 testing on the other CFWs.

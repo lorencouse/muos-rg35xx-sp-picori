@@ -12,8 +12,15 @@
   - [ ] audio through SDL2 (the PipeWire clock forcing is gone)
   - [ ] MENU opens the overlay (guide -> F8 via gptokeyb2)
   - [ ] glibc floor of the shim (`min_glibc` in port.json says 2.31)
-  - [ ] save states / fast-forward / SELECT layer still work with keyboard-only bindings
-- [ ] Get Cebion's LLM porting guideline from Discord `#porting-talk`, check README and launcher against it.
+  - [ ] save states (L2 / Y) and fast-forward (R2) still work with keyboard-only bindings
+  - [ ] Start+Select quits (gptokeyb2 default hotkey is Select)
+- [x] Cebion's porting reference (~/Downloads/portmaster-ai-complete-reference.md): checked. Changes made:
+      gptokeyb2 `.ini` instead of `.gptk` (project policy), no `-H` flag, Select+L2/R2 slot combos
+      dropped (slot picking lives in the overlay's Saves tab), gptokeyb2 licence added,
+      testing_thread.txt added (kept out of the zip), README thank-you rewritten, packaging comments
+      removed from the Compile section, no em dashes anywhere in port/.
+- [ ] PR description must use the PortMaster PR template and honestly tick the AI-assisted box:
+      be able to explain every non-standard line (the aspect seed and the SDL3SHIM passthrough).
 - [ ] Reply to Cebion on Discord in my own words.
 - [ ] Testing on other CFWs (ArkOS, ROCKNIX, AmberELEC) and resolutions (720x720, 1280x720),
       documented in `#testing-n-dev` before opening the PR.

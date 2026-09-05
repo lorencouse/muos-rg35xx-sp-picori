@@ -1,6 +1,6 @@
 ## Notes
 
-Thanks to [999sian](https://github.com/999sian/tmc) and the Project Picori contributors for the PC port of *The Minish Cap*, and to the [zeldaret](https://github.com/zeldaret/tmc) team for the decompilation it is built on. Thanks to [bmdhacks](https://github.com/bmdhacks/SDL/tree/sdl2-backend) for the SDL3-to-SDL2 shim.
+Thanks to [999sian](https://github.com/999sian/tmc) and the Project Picori contributors for the native PC port of *The Minish Cap*, which runs the decompiled game at full speed with save states and a built-in settings menu. Thanks to the [zeldaret](https://github.com/zeldaret/tmc) team for the decompilation and to [bmdhacks](https://github.com/bmdhacks/SDL/tree/sdl2-backend) for the SDL3-to-SDL2 shim.
 
 Source for this build: https://github.com/lorencouse/tmc/tree/rg35xx-sp-audio-ui
 
@@ -21,10 +21,9 @@ This port does not include the game. Copy your ROM into `ports/picori/` as `base
 | R2 (hold) | Fast-forward |
 | Start | Pause menu |
 | Select | Select |
-| Select + L2 / R2 | Previous / next save-state slot |
 | Menu | Port settings (also the "L" prompt on the file select) |
 
-Save states are separate from the in-game save. The settings overlay has a Saves tab with a thumbnail per slot.
+Save states are separate from the in-game save. Pick the slot to load in the settings overlay under Saves, which shows a thumbnail per slot.
 
 ## Compile
 
@@ -37,8 +36,9 @@ git clone -b rg35xx-sp-audio-ui https://github.com/lorencouse/tmc.git
 cd tmc
 git submodule update --init --recursive --depth 1
 TMC_SDL3_SHARED=1 python3 build.py --usa --slim
-# -> build/pc/tmc_pc, shipped as picori/tmc_pc.aarch64
 ```
+
+The binary is `build/pc/tmc_pc`.
 
 ### SDL3-on-SDL2 shim
 
@@ -59,5 +59,6 @@ cmake .. \
   -DSDL_VULKAN=OFF -DSDL_GPU=ON -DSDL_RENDER_GPU=ON \
   -DSDL_UNIX_CONSOLE_BUILD=ON
 make -j$(nproc)
-# -> build/libSDL3.so.0.*, shipped as picori/libs.aarch64/libSDL3.so.0
 ```
+
+The shim is `build/libSDL3.so.0.*`.

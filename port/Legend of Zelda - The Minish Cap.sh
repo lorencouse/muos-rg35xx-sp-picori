@@ -58,7 +58,7 @@ if [ -n "$SDL_AUDIODRIVER" ]; then
   GAME_SDL_AUDIODRIVER=sdl2
 fi
 
-$GPTOKEYB2 "$BINARY" -H back -c "$GAMEDIR/tmc_pc.gptk" &
+$GPTOKEYB2 "$BINARY" -c "$GAMEDIR/picori.ini" &
 
 pm_platform_helper "$GAMEDIR/$BINARY"
 

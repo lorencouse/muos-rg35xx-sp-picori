@@ -81,7 +81,7 @@ cp "$STAGE/cover.png" "$STAGE/picori/cover.png"
 find "$STAGE" -iname '*.gba' -delete
 
 for f in "Legend of Zelda - The Minish Cap.sh" picori/tmc_pc.aarch64 picori/libs.aarch64/libSDL3.so.0 \
-         picori/config.json picori/tmc_pc.gptk port.json gameinfo.xml README.md screenshot.png cover.png \
+         picori/config.json picori/picori.ini port.json gameinfo.xml README.md screenshot.png cover.png \
          picori/licenses/LICENSE-picori-GPL-3.0.txt picori/licenses/LICENSE-SDL3-zlib.txt; do
   [ -e "$STAGE/$f" ] || { echo "!! missing: $f" >&2; exit 1; }
 done
@@ -89,5 +89,6 @@ done
 mkdir -p "$DIST/$VERSION"
 out="$DIST/$VERSION/picori.zip"
 rm -f "$out"
+rm -f "$STAGE/testing_thread.txt"
 ( cd "$STAGE" && zip -q -r -X "$out" . -x '.DS_Store' -x '__MACOSX/*' )
 echo "==> $out ($(du -h "$out" | cut -f1), sha256 $(sha256_of "$out"))"
