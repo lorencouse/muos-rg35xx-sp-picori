@@ -47,10 +47,13 @@
       TSP re-test and ask for `ports/picori/log.txt` back.
 - [ ] Device-side only: add a `picori)` case to `/opt/muos/script/mux/menu_tap.sh` that injects 312 so
       physical MENU on this SP opens the settings overlay instead of the pause menu.
-- [ ] Tag v2.0.1 once fork release v0.8.3-sp6 is up (CI run 33999029945): bump `TMC_TAG` and
-      `TMC_SHA256` in build.sh, then tag. Carries `present_thread: false`, the sp6 binary (present
-      worker refuses GPU renderers, splash sized from the render output) and `min_glibc` 2.29.
-      Re-test the sp6 binary on the SP first: splash centred, game renders with the shipped config.
+- [x] v2.0.1 tagged 2026-09-05: fork release v0.8.3-sp6 (CI run 33999029945, one xmake
+      "double free" crash on the x86_64 ABI-check leg, rerun passed), build.sh pinned to the sp6
+      binary (sha ab7f8666...). Carries `present_thread: false`, the sp6 binary and `min_glibc`
+      2.29. sp6 tested on the SP before tagging: splash centred, the guard logs
+      "[present] renderer 'opengles2' is GPU-backed" and the game renders even with
+      `present_thread: true`.
+  - [ ] confirm the v2.0.1 CI run published picori.zip + libSDL3.so.0 on the release
 - [ ] Testing on other CFWs (ArkOS, ROCKNIX, AmberELEC) and resolutions (720x720, 1280x720),
       documented in `#testing-n-dev` before opening the PR.
 
@@ -86,10 +89,12 @@ then title music (looping) with nothing on screen.
       the worker refuses any renderer other than "software" (v0.8.3-sp6).
 - [x] Splash in the top-left corner: PaintFrame sized the splash from `SDL_GetWindowSize`, which
       still reports the 240x160 the window asked for at that point. Fork fix in v0.8.3-sp6: use
-      `SDL_GetCurrentRenderOutputSize`, fall back to the window size. Verify on the SP.
-- [ ] Load time: warm launches reach "Entering AgbMain" in well under 45 s. The first launch after
-      a reboot is cold-cache: `rom_data/` is 2789 loose 4 KB pages plus 13 MB of map data read
-      from the SD card. Measure it (`echo 3 > /proc/sys/vm/drop_caches`, launch, time the log line)
-      and, if it is really over a minute, ask the fork to pack rom_data into one file.
+      `SDL_GetCurrentRenderOutputSize`, fall back to the window size. Verified centred on the SP.
+- [x] Load time: measured on the SP with the page cache dropped (`echo 3 > drop_caches`): 12 s
+      from launch to "Entering AgbMain"; warm launches show the Nintendo/Capcom logo within 6 s.
+      The "over a minute" was the black screen, not loading. Nothing to do.
+- [ ] The file-select screen opens the fork's "Port & Randomizer Setup" sidebar on its own
+      (seen on the sp6 run with no input). Check whether that is meant to be on by default on a
+      handheld; "Close Sidebar" dismisses it.
 - [ ] Autosave: with `autosave_enabled` the game writes a 650 KB ring slot every 60 s to the SD
       card (three slots). Harmless so far; watch for hitching on the interval.
