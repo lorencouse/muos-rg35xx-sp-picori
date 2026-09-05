@@ -23,6 +23,7 @@
         not in its list; add `picori)` -> 312 there if MENU should open the overlay on this device
         (device-side, not a package change)
   - [x] `min_glibc`: sp5 binary GLIBC_2.29 (no GLIBCXX), shim GLIBC_2.29; port.json now says 2.29
+        (the v2.0.0 zip still carries 2.31; the next tag picks up 2.29)
 - [x] Cebion's porting reference (~/Downloads/portmaster-ai-complete-reference.md): checked. Changes made:
       gptokeyb2 `.ini` instead of `.gptk` (project policy), no `-H` flag, Select+L2/R2 slot combos
       dropped (slot picking lives in the overlay's Saves tab), gptokeyb2 licence added,

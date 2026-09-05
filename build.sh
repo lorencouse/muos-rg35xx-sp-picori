@@ -24,7 +24,7 @@ TMC_ASSET="tmc-multi-linux-arm64-${TMC_TAG}.tar.gz"
 TMC_SHA256="${TMC_SHA256:-7cf379896bacd1fc409775c077e46410d835b95be0ec00c2d29f7e1ffa4a4d85}"
 
 SHIM_REPO="lorencouse/muos-rg35xx-sp-picori"
-SHIM_TAG="${SDL3SHIM_TAG:-sdl3shim}"
+SHIM_TAG="${SDL3SHIM_TAG:-latest}"       # every release of this repo carries the shim
 SHIM_ASSET="libSDL3.so.0"
 
 sha256_of() {
@@ -62,7 +62,8 @@ if [ -n "${SDL3SHIM_LIB:-}" ]; then
 else
   shim_cache="$CACHE/$SHIM_ASSET-$SHIM_TAG"
   if [ ! -f "$shim_cache" ]; then
-    url="https://github.com/$SHIM_REPO/releases/download/$SHIM_TAG/$SHIM_ASSET"
+    if [ "$SHIM_TAG" = latest ]; then url="https://github.com/$SHIM_REPO/releases/latest/download/$SHIM_ASSET"
+    else url="https://github.com/$SHIM_REPO/releases/download/$SHIM_TAG/$SHIM_ASSET"; fi
     echo "==> $url"
     curl -fL --progress-bar -o "$shim_cache" "$url"
   fi
