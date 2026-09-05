@@ -15,10 +15,13 @@
         creates a GLES device and then SIGSEGVs inside libSDL2 (bugreport backtrace).
       - `TMC_AUTOPLAY=1` in the launcher: the fork shows a desktop ROM/language picker before the
         game; on a handheld that is an extra Start press every boot.
-  - [ ] frame rate: tmc_pc sat at ~35% CPU on the title at the 60 fps target; measure in-game
-        (TMC_PACE_LOG) before calling it done
-  - [ ] audio: device opened 44100 Hz / 1920 frames (weak-CPU path, 1.51 GHz); listen for dropouts
-  - [ ] save states (L2 / Y) and fast-forward (R2) with keyboard-only bindings
+  - [ ] Playtest on the SP (v2.0.0 installed, saves in place):
+    - [ ] frame rate in a busy area (tmc_pc sat at ~35% CPU on the title at the 60 fps target)
+    - [ ] audio: device opened 44100 Hz / 1920 frames; listen for dropouts. If it stutters, try
+          `echo 4096 > /mnt/mmc/ports/picori/audio_frames` and relaunch
+    - [ ] save states: L2 saves to the next slot, Y loads the selected one, overlay Saves tab picks
+    - [ ] fast-forward on R2 (hold)
+    - [ ] muOS volume keys and sleep/dim behave normally while the game runs
   - [ ] physical MENU on this SP goes through the custom menu_tap.sh, which injects Start for ports
         not in its list; add `picori)` -> 312 there if MENU should open the overlay on this device
         (device-side, not a package change)
@@ -31,7 +34,14 @@
       removed from the Compile section, no em dashes anywhere in port/.
 - [ ] PR description must use the PortMaster PR template and honestly tick the AI-assisted box:
       be able to explain every non-standard line (the aspect seed and the SDL3SHIM passthrough).
-- [ ] Reply to Cebion on Discord in my own words.
+- [ ] Reply to Cebion on Discord in my own words. Facts to lean on: template launcher, gptokeyb2
+      ini, port.json v4, mixv1 cover, sdl3shim instead of weston, source branch cited in README and
+      port.json, tested on the SP (muOS). v2.0.0 zip:
+      https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.0.0
+- [ ] Hand EpicNoob the v2.0.0 zip for the TSP re-test and ask for `ports/picori/log.txt` back.
+- [ ] Device-side only: add a `picori)` case to `/opt/muos/script/mux/menu_tap.sh` that injects 312 so
+      physical MENU on this SP opens the settings overlay instead of the pause menu.
+- [ ] Next tag (v2.0.1 or later) picks up `min_glibc` 2.29; the v2.0.0 zip says 2.31.
 - [ ] Testing on other CFWs (ArkOS, ROCKNIX, AmberELEC) and resolutions (720x720, 1280x720),
       documented in `#testing-n-dev` before opening the PR.
 
