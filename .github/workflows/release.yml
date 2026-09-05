@@ -38,14 +38,13 @@ jobs:
       - name: Toolchain
         run: |
           set -eux
-          if ! apt-get update; then
-            printf '%s\n' \
-              'deb http://archive.debian.org/debian bullseye main' \
-              'deb http://archive.debian.org/debian-security bullseye-security main' \
-              > /etc/apt/sources.list
-            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
-            apt-get update
-          fi
+          # bullseye is out of LTS; deb.debian.org 404s on its pool files.
+          printf '%s\n' \
+            'deb http://archive.debian.org/debian bullseye main' \
+            'deb http://archive.debian.org/debian-security bullseye-security main' \
+            > /etc/apt/sources.list
+          echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+          apt-get update
           apt-get install -y --no-install-recommends git ca-certificates build-essential cmake ninja-build pkg-config
       - name: Sources
         run: |
