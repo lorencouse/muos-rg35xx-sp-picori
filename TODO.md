@@ -15,12 +15,16 @@
         creates a GLES device and then SIGSEGVs inside libSDL2 (bugreport backtrace).
       - `TMC_AUTOPLAY=1` in the launcher: the fork shows a desktop ROM/language picker before the
         game; on a handheld that is an extra Start press every boot.
-  - [ ] Playtest on the SP (v2.0.0 installed, saves in place):
-    - [ ] frame rate in a busy area (tmc_pc sat at ~35% CPU on the title at the 60 fps target)
+  - [ ] Playtest on the SP (v2.0.0 installed, saves in place). Findings 2026-09-05, see
+        "Playtest findings" below: the v2.0.0 zip shows the LOADING splash forever once the
+        menu hint has been dismissed; fixed on the SP by `present_thread: false` (committed).
+    - [ ] frame rate in a busy area (tmc_pc ~38-42% CPU in the Minish Woods at the 60 fps target
+          with the synchronous present)
     - [ ] audio: device opened 44100 Hz / 1920 frames; listen for dropouts. If it stutters, try
           `echo 4096 > /mnt/mmc/ports/picori/audio_frames` and relaunch
     - [ ] save states: L2 saves to the next slot, Y loads the selected one, overlay Saves tab picks
-    - [ ] fast-forward on R2 (hold)
+    - [x] fast-forward on R2 (hold): works; each press/release logs one `[pace] ... vsync=0/1`
+          line because fast-forward drops vsync. Expected, not a fault.
     - [ ] muOS volume keys and sleep/dim behave normally while the game runs
   - [ ] physical MENU on this SP goes through the custom menu_tap.sh, which injects Start for ports
         not in its list; add `picori)` -> 312 there if MENU should open the overlay on this device
@@ -37,11 +41,16 @@
 - [ ] Reply to Cebion on Discord in my own words. Facts to lean on: template launcher, gptokeyb2
       ini, port.json v4, mixv1 cover, sdl3shim instead of weston, source branch cited in README and
       port.json, tested on the SP (muOS). v2.0.0 zip:
-      https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.0.0
-- [ ] Hand EpicNoob the v2.0.0 zip for the TSP re-test and ask for `ports/picori/log.txt` back.
+      https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.0.1 (once tagged; v2.0.0
+      is the black-screen build, do not link it)
+- [ ] Hand EpicNoob the **v2.0.1** zip (not v2.0.0, which goes black after the menu hint) for the
+      TSP re-test and ask for `ports/picori/log.txt` back.
 - [ ] Device-side only: add a `picori)` case to `/opt/muos/script/mux/menu_tap.sh` that injects 312 so
       physical MENU on this SP opens the settings overlay instead of the pause menu.
-- [ ] Next tag (v2.0.1 or later) picks up `min_glibc` 2.29; the v2.0.0 zip says 2.31.
+- [ ] Tag v2.0.1 once fork release v0.8.3-sp6 is up (CI run 33999029945): bump `TMC_TAG` and
+      `TMC_SHA256` in build.sh, then tag. Carries `present_thread: false`, the sp6 binary (present
+      worker refuses GPU renderers, splash sized from the render output) and `min_glibc` 2.29.
+      Re-test the sp6 binary on the SP first: splash centred, game renders with the shipped config.
 - [ ] Testing on other CFWs (ArkOS, ROCKNIX, AmberELEC) and resolutions (720x720, 1280x720),
       documented in `#testing-n-dev` before opening the PR.
 
@@ -59,4 +68,28 @@
         TMC_AUDIO_FRAMES / audio_frames / bigger-default-buffer logic (2048 frames) on Linux
         aarch64, not just Android. Needs a TSP re-test; if still choppy, try
         `echo 4096 > ports/picori/audio_frames`.
-  - [ ] ask EpicNoob to re-test the v2.0.0 zip and send `ports/picori/log.txt`
+  - [ ] ask EpicNoob to re-test the v2.0.1 zip and send `ports/picori/log.txt`
+
+## Playtest findings (SP, 2026-09-05, v2.0.0)
+
+Reported: "PROJECT PICORI LOADING" drawn in the top-left corner, load feels like over a minute,
+then title music (looping) with nothing on screen.
+
+- [x] Nothing on screen: the game was running (autosaves, title demo loop) but no frame reached
+      the panel after the splash. Root cause: the fork's off-thread present worker
+      (`port_present_thread.cpp`) was written for the software renderer under X. Through the shim
+      the SDL_Renderer is opengles2, whose GL context is current on the main thread, so the
+      worker's `SDL_RenderPresent` calls succeed without drawing. The first launches looked fine
+      only because the "MENU or Select+Start" hint overlay forces a synchronous main-thread
+      present; once `menu_hint_seen` was saved every frame went to the worker. Package fix:
+      `present_thread: false` in config.json (commit 32edcf8; also applied on the SP). Fork fix:
+      the worker refuses any renderer other than "software" (v0.8.3-sp6).
+- [x] Splash in the top-left corner: PaintFrame sized the splash from `SDL_GetWindowSize`, which
+      still reports the 240x160 the window asked for at that point. Fork fix in v0.8.3-sp6: use
+      `SDL_GetCurrentRenderOutputSize`, fall back to the window size. Verify on the SP.
+- [ ] Load time: warm launches reach "Entering AgbMain" in well under 45 s. The first launch after
+      a reboot is cold-cache: `rom_data/` is 2789 loose 4 KB pages plus 13 MB of map data read
+      from the SD card. Measure it (`echo 3 > /proc/sys/vm/drop_caches`, launch, time the log line)
+      and, if it is really over a minute, ask the fork to pack rom_data into one file.
+- [ ] Autosave: with `autosave_enabled` the game writes a 650 KB ring slot every 60 s to the SD
+      card (three slots). Harmless so far; watch for hitching on the interval.
