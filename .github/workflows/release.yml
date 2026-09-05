@@ -16,9 +16,9 @@ on:
         required: true
         type: string
       tmc_tag:
-        description: "lorencouse/tmc release tag to take tmc_pc from"
+        description: "lorencouse/tmc release tag to take tmc_pc from (empty = build.sh default)"
         required: false
-        default: "v0.8.3-sp5"
+        default: ""
         type: string
       shim_only:
         description: "Build and upload the shim artifact only, no zip or release"
@@ -97,10 +97,12 @@ jobs:
           path: shim
       - name: Build zip
         env:
-          TMC_TAG: ${{ inputs.tmc_tag || 'v0.8.3-sp5' }}
+          TMC_TAG: ${{ inputs.tmc_tag }}
         run: |
           set -eux
           TAG="${{ inputs.tag || github.ref_name }}"
+          # Empty TMC_TAG lets build.sh use its pinned default (tag + sha).
+          [ -n "$TMC_TAG" ] || TMC_TAG="$(sed -n 's/^TMC_TAG="\${TMC_TAG:-\(.*\)}"$/\1/p' build.sh)"
           SDL3SHIM_LIB=shim/libSDL3.so.0 ./build.sh "${TAG#v}"
           cp "dist/${TAG#v}/picori.zip" picori.zip
           cp shim/libSDL3.so.0 libSDL3.so.0
