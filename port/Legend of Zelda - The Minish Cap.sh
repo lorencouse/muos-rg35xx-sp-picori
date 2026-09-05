@@ -37,6 +37,7 @@ mkdir -p "$GAMEDIR/conf"
 export XDG_DATA_HOME="$GAMEDIR/conf"
 export LD_LIBRARY_PATH="$GAMEDIR/libs.${DEVICE_ARCH}:$LD_LIBRARY_PATH"
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
+export TMC_AUTOPLAY=1
 
 # Non-4:3 panels get integer scaling instead of the 4:3 stretch, once.
 if [ ! -f "$GAMEDIR/conf/.aspect" ]; then

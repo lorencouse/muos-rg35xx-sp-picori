@@ -2,18 +2,28 @@
 
 ## Before the PortMaster PR
 
-- [ ] Push the fork branch `portmaster-shared-sdl3` (local clone `~/Documents/Development/picori`,
-      remote `lorencouse`), merge into `rg35xx-sp-audio-ui`, tag `v0.8.3-sp5`.
-      It links SDL3 shared (`TMC_SDL3_SHARED=1`) so the sdl3shim can replace it.
-- [ ] Push a `v2.0.0` tag here: the workflow builds the shim (bullseye arm64) and attaches
-      `picori.zip` + `libSDL3.so.0` to the release. Then pin `TMC_SHA256` in `build.sh`.
-- [ ] Test on the RG35XX SP over adb. Nothing in the reworked package has run on hardware.
-  - [ ] frame rate without the governor pin
-  - [ ] audio through SDL2 (the PipeWire clock forcing is gone)
-  - [ ] MENU opens the overlay (guide -> F8 via gptokeyb2)
-  - [ ] glibc floor of the shim (`min_glibc` in port.json says 2.31)
-  - [ ] save states (L2 / Y) and fast-forward (R2) still work with keyboard-only bindings
-  - [ ] Start+Select quits (gptokeyb2 default hotkey is Select)
+- [x] Fork: `portmaster-shared-sdl3` merged into `rg35xx-sp-audio-ui`, release `v0.8.3-sp5` published
+      (2026-09-05) with tmc_pc linked against shared SDL3. Eight CI runs: the bullseye container now
+      installs from snapshot.debian.org because the Debian CDN 404s on bullseye-security.
+- [x] `TMC_SHA256` pinned in `build.sh`; `v2.0.0` tag pushed, workflow builds shim + zip.
+      Shim: bmdhacks/SDL@6057d79, glibc floor 2.29, NEEDED only libc/libm/libdl/libgcc_s/libpthread.
+- [x] SP test over adb (2026-09-05, muOS 2601.1): boots through the shim (video driver sdl2,
+      SDL_Renderer opengles2), title and file select render correctly at 640x480 stretch, pad
+      reaches the game via gptokeyb2, guide (312) opens the F8 overlay, Start+Select quits and the
+      frontend returns. Fixes made during the test:
+      - `render_backend: software`, `gpu_raster: false` in config.json: with the shim SDL_GPU
+        creates a GLES device and then SIGSEGVs inside libSDL2 (bugreport backtrace).
+      - `TMC_AUTOPLAY=1` in the launcher: the fork shows a desktop ROM/language picker before the
+        game; on a handheld that is an extra Start press every boot.
+  - [ ] frame rate: tmc_pc sat at ~35% CPU on the title at the 60 fps target; measure in-game
+        (TMC_PACE_LOG) before calling it done
+  - [ ] audio: device opened 44100 Hz / 1920 frames (weak-CPU path, 1.51 GHz); listen for dropouts
+  - [ ] save states (L2 / Y) and fast-forward (R2) with keyboard-only bindings
+  - [ ] physical MENU on this SP goes through the custom menu_tap.sh, which injects Start for ports
+        not in its list; add `picori)` -> 312 there if MENU should open the overlay on this device
+        (device-side, not a package change)
+  - [ ] `min_glibc`: binary 2.29 (sp4 measurement), shim 2.29; port.json says 2.31, lower it once
+        the sp5 binary's floor is read from the release asset
 - [x] Cebion's porting reference (~/Downloads/portmaster-ai-complete-reference.md): checked. Changes made:
       gptokeyb2 `.ini` instead of `.gptk` (project policy), no `-H` flag, Select+L2/R2 slot combos
       dropped (slot picking lives in the overlay's Saves tab), gptokeyb2 licence added,
