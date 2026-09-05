@@ -1,24 +1,3 @@
-# Project Picori keyboard map. The port's own gamepad bindings are unreachable
-# here: weston/libinput refuses muOS-Keys (udev tags it Keyboard+Joystick) and
-# this SDL3 build finds no gamepad on it either, so gptokeyb translates the pad
-# into a virtual keyboard and everything below mirrors config.json "bindings".
-#
-# The names on the left are SDL's, and on this device they do NOT match the
-# labels on the case -- muOS-Keys reports the buttons under borrowed key codes.
-# Decoded from /proc/bus/input/devices against the launcher's
-# SDL_GAMECONTROLLERCONFIG:
-#
-#   case says   evdev key     SDL name        line below
-#   SELECT      BTN_TL        back            back
-#   START       BTN_TR        start           start
-#   MENU        BTN_TL2       guide           guide
-#   L2          BTN_SELECT    lefttrigger     l2
-#   R2          BTN_START     righttrigger    r2
-#
-# There is no BTN_TR2, BTN_MODE or BTN_THUMBL/R in the device's key bitmap,
-# so l3/r3 are dead here -- the SP has no sticks and no spare button beyond
-# what is listed.
-
 [controls]
 a = x
 b = z
@@ -27,16 +6,8 @@ y = f6
 
 l1 = a
 r1 = s
-
-# L2 = quick-save to a new slot, R2 = fast-forward (hold), Y = load the
-# selected slot. These were the port's soft-slot buttons (keys q/v/e) but no
-# tmc.softslots sidecar has ever been written, so nothing was ever assigned
-# to them. X stays on c and remains available if extra item slots are wanted.
 l2 = home
 r2 = tab
-
-l3 = \"
-r3 = \"
 
 start = enter
 back = backspace
@@ -51,24 +22,8 @@ left_analog_up = up
 left_analog_down = down
 left_analog_left = left
 left_analog_right = right
-right_analog_up = \"
-right_analog_down = \"
-right_analog_left = \"
-right_analog_right = \"
 
-# Held-SELECT layer: walks the selected save-state slot without opening the
-# menu. Only the rare action needs a modifier -- save, load and fast-forward
-# are single presses above. The slot picker in MENU -> Saves shows a preview
-# thumbnail and timestamp per slot, which is the better way to pick one.
-#
-# A key left out of a layer is *unbound* while the hotkey is held, not
-# inherited from [controls] -- `gptokeyb2 -d` prints it empty. So everything
-# that is not one of the two overrides is repeated verbatim, or holding SELECT
-# would also mute the face buttons, START and the MENU overlay.
 [controls:hk_hotkey]
-l2 = pageup     # SELECT+L2  previous slot
-r2 = pagedown   # SELECT+R2  next slot
-
 a = x
 b = z
 x = c
@@ -76,8 +31,8 @@ y = f6
 
 l1 = a
 r1 = s
-l3 = \"
-r3 = \"
+l2 = pageup
+r2 = pagedown
 
 start = enter
 guide = f8
