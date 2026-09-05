@@ -42,7 +42,7 @@ TMC_BINARY=./tmc_pc SDL3SHIM_LIB=./libSDL3.so.0 ./build.sh 2.0.0-dev
 ```
 
 `build.sh` downloads `tmc_pc` from the fork release named by `TMC_TAG`
-(default `v0.8.3-sp5`) and the shim from this repo's `sdl3shim` release
+(default `v0.8.3-sp6`) and the shim from this repo's `sdl3shim` release
 unless both are given locally. Pushing a `v*` tag runs the workflow, which
 builds the shim in a Debian bullseye arm64 container (glibc 2.31) and attaches
 `picori.zip` and `libSDL3.so.0` to the release.

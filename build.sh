@@ -19,9 +19,9 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
 TMC_REPO="lorencouse/tmc"
-TMC_TAG="${TMC_TAG:-v0.8.3-sp5}"
+TMC_TAG="${TMC_TAG:-v0.8.3-sp6}"
 TMC_ASSET="tmc-multi-linux-arm64-${TMC_TAG}.tar.gz"
-TMC_SHA256="${TMC_SHA256:-7cf379896bacd1fc409775c077e46410d835b95be0ec00c2d29f7e1ffa4a4d85}"
+TMC_SHA256="${TMC_SHA256:-ab7f8666a1a495c40327cc7ae9ab54755ad16f51dbc03853ffbd2bb8de57da9c}"
 
 SHIM_REPO="lorencouse/muos-rg35xx-sp-picori"
 SHIM_TAG="${SDL3SHIM_TAG:-latest}"       # every release of this repo carries the shim
