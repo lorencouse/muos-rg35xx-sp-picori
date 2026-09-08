@@ -127,7 +127,7 @@
     "shader_preset": "",
     "show_fps": false,
     "touch_scheme": "joystick",
-    "tts_enabled": true,
+    "tts_enabled": false,
     "tts_language": "",
     "tts_pitch": 0.5,
     "tts_rate": 0.5,
