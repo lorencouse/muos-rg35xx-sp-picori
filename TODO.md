@@ -41,9 +41,9 @@
 - [ ] Reply to Cebion on Discord in my own words. Facts to lean on: template launcher, gptokeyb2
       ini, port.json v4, mixv1 cover, sdl3shim instead of weston, source branch cited in README and
       port.json, tested on the SP (muOS). v2.0.0 zip:
-      https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.0.1 (once tagged; v2.0.0
-      is the black-screen build, do not link it)
-- [ ] Hand EpicNoob the **v2.0.1** zip (not v2.0.0, which goes black after the menu hint) for the
+      https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.0.2 (v2.0.0 is the
+      black-screen build, do not link it)
+- [ ] Hand EpicNoob the **v2.0.2** zip (not v2.0.0, which goes black after the menu hint) for the
       TSP re-test and ask for `ports/picori/log.txt` back.
 - [ ] Device-side only: add a `picori)` case to `/opt/muos/script/mux/menu_tap.sh` that injects 312 so
       physical MENU on this SP opens the settings overlay instead of the pause menu.
@@ -56,6 +56,9 @@
   - [x] v2.0.1 release published (second run; the first fetched sp5 because the workflow
         hardcoded the fork tag): picori.zip carries the sp6 binary (sha ab7f8666...),
         present_thread false, min_glibc 2.29. https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.0.1
+- [x] v2.0.2 tagged 2026-09-07: `tts_enabled: false` in config.json. bbilford83 heard the fork's
+      prelaunch speech on Knulli (espeak present); the SP has no backend so it never showed.
+      Same binary and shim as v2.0.1.
 - [ ] Testing on other CFWs (ArkOS, ROCKNIX, AmberELEC) and resolutions (720x720, 1280x720),
       documented in `#testing-n-dev` before opening the PR.
 
@@ -73,7 +76,7 @@
         TMC_AUDIO_FRAMES / audio_frames / bigger-default-buffer logic (2048 frames) on Linux
         aarch64, not just Android. Needs a TSP re-test; if still choppy, try
         `echo 4096 > ports/picori/audio_frames`.
-  - [ ] ask EpicNoob to re-test the v2.0.1 zip and send `ports/picori/log.txt`
+  - [ ] ask EpicNoob to re-test the v2.0.2 zip and send `ports/picori/log.txt`
 
 ## Playtest findings (SP, 2026-09-05, v2.0.0)
 
