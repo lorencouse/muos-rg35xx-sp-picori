@@ -22,7 +22,9 @@
           with the synchronous present)
     - [ ] audio: device opened 44100 Hz / 1920 frames; listen for dropouts. If it stutters, try
           `echo 4096 > /mnt/mmc/ports/picori/audio_frames` and relaunch
-    - [ ] save states: L2 saves to the next slot, Y loads the selected one, overlay Saves tab picks
+    - [x] save states: verified on the SP 2026-09-10. Mapping settled as L2 = save to a new
+          slot, Select+L2 = load (see the Kdog thread below; the load-on-bare-L2 round was
+          reverted on request), overlay Saves tab picks the slot.
     - [x] fast-forward on R2 (hold): works; each press/release logs one `[pace] ... vsync=0/1`
           line because fast-forward drops vsync. Expected, not a fault.
     - [ ] muOS volume keys and sleep/dim behave normally while the game runs
@@ -43,7 +45,7 @@
       port.json, tested on the SP (muOS). v2.0.0 zip:
       https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.0.2 (v2.0.0 is the
       black-screen build, do not link it)
-- [ ] Hand EpicNoob the **v2.0.2** zip (not v2.0.0, which goes black after the menu hint) for the
+- [ ] Hand EpicNoob the **v2.1.0** zip for the
       TSP re-test and ask for `ports/picori/log.txt` back.
 - [ ] Device-side only: add a `picori)` case to `/opt/muos/script/mux/menu_tap.sh` that injects 312 so
       physical MENU on this SP opens the settings overlay instead of the pause menu.
@@ -59,6 +61,9 @@
 - [x] v2.0.2 tagged 2026-09-07: `tts_enabled: false` in config.json. bbilford83 heard the fork's
       prelaunch speech on Knulli (espeak present); the SP has no backend so it never showed.
       Same binary and shim as v2.0.1.
+- [x] v2.1.0 tagged 2026-09-10: fork release `v0.8.3-sp7`. Fixes the blank screen after a
+      cross-session save-state load, keeps the settings shell half-screen on every group, and
+      swaps the save-state pair to L2 = save / Select+L2 = load. Same shim as v2.0.2.
 - [ ] Testing on other CFWs (ArkOS, ROCKNIX, AmberELEC) and resolutions (720x720, 1280x720),
       documented in `#testing-n-dev` before opening the PR.
 
@@ -76,7 +81,7 @@
         TMC_AUDIO_FRAMES / audio_frames / bigger-default-buffer logic (2048 frames) on Linux
         aarch64, not just Android. Needs a TSP re-test; if still choppy, try
         `echo 4096 > ports/picori/audio_frames`.
-  - [ ] ask EpicNoob to re-test the v2.0.2 zip and send `ports/picori/log.txt`
+  - [ ] ask EpicNoob to re-test the v2.1.0 zip and send `ports/picori/log.txt`
 
 - TrimUI Pro S / Knulli Scarab 20260720 (1280x720) and R36S / AmberELEC (Kdog, 2026-09-10, v2.0.2):
   both run. On both he had to set window scale 3 by hand, and the scale setting is itself hard to
@@ -120,8 +125,11 @@
         beside a 691x720 panel; 640x480 -> 331x221 above a 640x259 panel. The game is frozen
         while the menu is up but the present path re-rasterises, so aspect, scale, filter,
         colour correction, persistence and fill all still apply live.
-    - [ ] cut a fork release (v0.8.3-sp7?) and repin `TMC_TAG` / `TMC_SHA256` in build.sh, then
-          tag v2.1.0 here. Nothing else in this round needs a new binary.
+    - [x] fork release `v0.8.3-sp7` cut 2026-09-10 (CI 34502158642, all legs green); build.sh
+          repinned (sha 37c00654...) and the arm64 `tmc_pc` pushed to the SP, old binary kept as
+          `tmc_pc.aarch64.sp6.bak`. sp7 also carries the split for *every* console group, not
+          just Display: stepping with L1/R1 no longer jumps between half the screen and all of
+          it. Verified on the SP.
   - [ ] fork follow-up (needs a CI build, so not in this zip): make `Port_UiScale()` read
         `SDL_GetCurrentRenderOutputSize` and recompute on `SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED`
         instead of caching the pre-fullscreen window size -- same fix d573de767 applied to the
@@ -157,7 +165,17 @@
           prints "set hotkey as back", `[controls]` l2 = "f6" / y = "v" / r2 = "tab", and
           `[controls:hk_hotkey]` l2 = "home" with every other bind repeated and `back =` empty.
           `-H hotkey` is in this build's usage string, so the flag is supported, not tolerated.
-    - [ ] still needs a button press on the SP: that L2 loads and Select+L2 saves a new slot,
+    - [x] reversed again 2026-09-10 on request: **L2 = save to a new slot, Select+L2 = load**.
+          Saving is the press you make mid-play, and keeping load behind the modifier stops a
+          stray L2 from throwing progress away. README's controls table follows.
+    - [x] blank screen after a state load (SP, 2026-09-10): loading a state written by an
+          *earlier run* left the picture stuck at the last fade's colour while the room, its
+          palettes and the music ran on behind it; pressing Start brought it back because the
+          pause menu re-flags every palette. Cross-session loads resume through the engine, and
+          room init *inverts* the standing fade rather than setting one, so arriving from live
+          gameplay (a finished fade-in) inverted into a fade-*out*. Fork fix in sp7: fade out to
+          black before `SetTask(TASK_GAME)`. Verified on the SP.
+    - [ ] superseded, kept for the PR discussion: that L2 loads and Select+L2 saves a new slot,
           that a Select *tap* still reaches the game (the dump cannot show what gptokeyb2 does
           with the modifier on release), and that holding Select does not mute the face buttons
           or the F8 overlay
