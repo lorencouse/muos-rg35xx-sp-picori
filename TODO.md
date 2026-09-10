@@ -78,6 +78,25 @@
         `echo 4096 > ports/picori/audio_frames`.
   - [ ] ask EpicNoob to re-test the v2.0.2 zip and send `ports/picori/log.txt`
 
+- TrimUI Pro S / Knulli Scarab 20260720 (1280x720) and R36S / AmberELEC (Kdog, 2026-09-10, v2.0.2):
+  both run. On both he had to set window scale 3 by hand, and the scale setting is itself hard to
+  read and needs a restart to take effect.
+  - [x] seed `window_scale` from `DISPLAY_WIDTH`/`DISPLAY_HEIGHT` in the launcher, once, next to
+        the aspect seed: largest whole multiple of 240x160 that fits (1280x720 -> 4, 640x480 -> 2),
+        and only over the shipped default so a hand-picked scale stands. Uses its own
+        `conf/.scale` marker, so v2.0.2 installs pick it up on the next launch. Why it matters at
+        all when the config says `fullscreen: true`: the game creates the window at
+        240x160*scale and asks for fullscreen afterwards, and on those two CFWs the request
+        appears not to resize the window.
+  - [ ] confirm with Kdog on the next zip that scale 4 on the Pro S looks right (960x640 inside
+        1280x720 with pixel_perfect) or whether 3 was a deliberate preference
+  - [ ] "L2 save, X or Y load is weird mapping": current ini is L2 -> save to a new slot,
+        Y -> load the selected slot, X -> the game's extra item slot. Decide whether to move the
+        state keys onto a modifier (e.g. Select+L2 / Select+R2) instead of bare buttons, or leave
+        them and rely on the overlay's Saves tab. No change made yet.
+  - [x] menu button differs per device (Menu on the Pro S, R3 on the R36S): that is the firmware's
+        Guide mapping, nothing to change in the package. Noted in the port README's controls table.
+
 ## Playtest findings (SP, 2026-09-05, v2.0.0)
 
 Reported: "PROJECT PICORI LOADING" drawn in the top-left corner, load feels like over a minute,

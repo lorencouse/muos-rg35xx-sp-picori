@@ -23,6 +23,8 @@ This port does not include the game. Copy your ROM into `ports/picori/` as `base
 | Select | Select |
 | Menu | Port settings (also the "L" prompt on the file select) |
 
+The settings overlay opens on whatever button your firmware reports as the controller's Guide: the Menu button on muOS and on Knulli, R3 on the R36S under AmberELEC.
+
 Save states are separate from the in-game save. Pick the slot to load in the settings overlay under Saves, which shows a thumbnail per slot.
 
 ## Compile

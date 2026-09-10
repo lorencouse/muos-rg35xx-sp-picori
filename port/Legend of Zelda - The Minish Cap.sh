@@ -39,12 +39,36 @@ export LD_LIBRARY_PATH="$GAMEDIR/libs.${DEVICE_ARCH}:$LD_LIBRARY_PATH"
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 export TMC_AUTOPLAY=1
 
+PANEL_WIDTH=${DISPLAY_WIDTH:-640}
+PANEL_HEIGHT=${DISPLAY_HEIGHT:-480}
+
 # Non-4:3 panels get integer scaling instead of the 4:3 stretch, once.
 if [ ! -f "$GAMEDIR/conf/.aspect" ]; then
-  if [ $(( ${DISPLAY_WIDTH:-640} * 3 )) -ne $(( ${DISPLAY_HEIGHT:-480} * 4 )) ]; then
+  if [ $(( PANEL_WIDTH * 3 )) -ne $(( PANEL_HEIGHT * 4 )) ]; then
     sed -i 's/"aspect_mode": "stretch"/"aspect_mode": "pixel_perfect"/' "$GAMEDIR/config.json"
   fi
   touch "$GAMEDIR/conf/.aspect"
+fi
+
+# Seed window_scale from the panel, once. The game creates its window at
+# 240x160 times this scale and only then asks for fullscreen; where that
+# request is a no-op (reported on Knulli/TrimUI Pro S at 1280x720 and on
+# AmberELEC/R36S) scale 1 leaves a postage-stamp window, and the scale
+# setting itself is then too small to read in the overlay. Take the largest
+# whole multiple that fits the panel, capped at the game's own limit of 10.
+# The sed only matches the shipped default, so a hand-picked scale stands.
+if [ ! -f "$GAMEDIR/conf/.scale" ]; then
+  scale=$(( PANEL_WIDTH / 240 ))
+  scale_v=$(( PANEL_HEIGHT / 160 ))
+  [ "$scale_v" -lt "$scale" ] && scale=$scale_v
+  [ "$scale" -lt 1 ] && scale=1
+  [ "$scale" -gt 10 ] && scale=10
+  if [ "$scale" -ne 1 ]; then
+    sed -i -e "s/\(\"window_scale\"[[:space:]]*:[[:space:]]*\)1,/\1$scale,/" \
+           -e "s/\(\"window_scale\"[[:space:]]*:[[:space:]]*\)1\$/\1$scale/" \
+           "$GAMEDIR/config.json"
+  fi
+  touch "$GAMEDIR/conf/.scale"
 fi
 
 GAME_SDL_VIDEODRIVER=""
