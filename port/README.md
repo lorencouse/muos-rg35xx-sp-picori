@@ -14,13 +14,14 @@ This port does not include the game. Copy your ROM into `ports/picori/` as `base
 | A | Sword / confirm |
 | B | Item / cancel |
 | X | Extra item slot (assign it in the pause menu) |
-| Y | Load the selected save state |
+| Y | Second extra item slot |
 | L1 | GBA L |
 | R1 | GBA R |
-| L2 | Save state to the next slot |
+| L2 | Load the selected save state |
+| Select + L2 | Save state to a new slot |
 | R2 (hold) | Fast-forward |
 | Start | Pause menu |
-| Select | Select |
+| Select | Select (no in-game effect while held for the combo above) |
 | Menu | Port settings (also the "L" prompt on the file select) |
 
 The settings overlay opens on whatever button your firmware reports as the controller's Guide: the Menu button on muOS and on Knulli, R3 on the R36S under AmberELEC.

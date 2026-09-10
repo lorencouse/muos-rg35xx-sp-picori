@@ -90,10 +90,22 @@
         appears not to resize the window.
   - [ ] confirm with Kdog on the next zip that scale 4 on the Pro S looks right (960x640 inside
         1280x720 with pixel_perfect) or whether 3 was a deliberate preference
-  - [ ] "L2 save, X or Y load is weird mapping": current ini is L2 -> save to a new slot,
-        Y -> load the selected slot, X -> the game's extra item slot. Decide whether to move the
-        state keys onto a modifier (e.g. Select+L2 / Select+R2) instead of bare buttons, or leave
-        them and rely on the overlay's Saves tab. No change made yet.
+  - [x] "L2 save, X or Y load is weird mapping": fixed. Every convention on these devices has
+        L = load and R = save (RetroArch: hotkey+L1 load, hotkey+R1 save, hotkey+L2/R2 slot;
+        modifier-less ports: bare L2 load, R2 save), and the old ini had L2 saving and a face
+        button loading. Now L2 loads the selected slot, Select+L2 saves to a new slot, R2 keeps
+        fast-forward and Y goes back to being a soft slot.
+    - This re-adds `-H back` and a `[controls:hk_hotkey]` layer, which 4bed584 removed on the
+      grounds that Cebion's reference makes the plain `.ini` project policy and that Select
+      should keep its game function. Be ready to defend it in the PR: the layer exists only to
+      keep save on a modifier so no bare game button is spent on it, and Select is inert in
+      Minish Cap outside menus. If a reviewer objects, the fallback with no layer is bare
+      L2 = load, Y = save to a new slot.
+    - Layer gotcha (from docs/weston-port-notes.md): a key left out of a layer is unbound while
+      Select is held, not inherited from `[controls]`, so the layer repeats every other binding
+      verbatim. `back` is the one deliberate omission.
+    - [ ] test on the SP: L2 loads, Select+L2 saves a new slot, Select alone still reaches the
+          game, and holding Select does not mute the face buttons or the F8 overlay
   - [x] menu button differs per device (Menu on the Pro S, R3 on the R36S): that is the firmware's
         Guide mapping, nothing to change in the package. Noted in the port README's controls table.
 
