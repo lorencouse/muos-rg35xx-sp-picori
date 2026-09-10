@@ -127,9 +127,17 @@
         instead of caching the pre-fullscreen window size -- same fix d573de767 applied to the
         boot splash. Consider also whether AUTO should key off "no mouse" rather than window
         width, so a 720p handheld gets the console shell without the package pinning it.
+  - [x] adb smoke on the SP, 2026-09-10 (muOS 2601.1, sp6 binary, new launcher + ini pushed,
+        `conf/.scale` removed first): the seed rewrote the device's own `"window_scale": 1` to 2
+        -- that copy had been rewritten by the game, so window_scale was the last key with no
+        trailing comma, which is the sed's second branch doing its job on busybox --
+        `conf/.scale` was created, `TMC_UI_SCALE=1.0` is in the environment of both the
+        gptokeyb2 and tmc_pc processes (read from `/proc/<pid>/environ`), and the game reached
+        "Entering AgbMain" and drew the title screen (tools/grab-screen.sh).
   - [ ] confirm with Kdog on the next zip: overlay legible at 1280x720 with no hand-editing,
         console shell (not the ribbon) on both devices, and whether scale 4 or his 3 reads
-        better on the Pro S
+        better on the Pro S. Neither can be checked on the SP: at 640x480 `TMC_UI_SCALE` comes
+        out 1.0 (the value the overlay already used) and AUTO already picked the console shell.
   - [x] "L2 save, X or Y load is weird mapping": fixed. Every convention on these devices has
         L = load and R = save (RetroArch: hotkey+L1 load, hotkey+R1 save, hotkey+L2/R2 slot;
         modifier-less ports: bare L2 load, R2 save), and the old ini had L2 saving and a face
@@ -144,8 +152,15 @@
     - Layer gotcha (from docs/weston-port-notes.md): a key left out of a layer is unbound while
       Select is held, not inherited from `[controls]`, so the layer repeats every other binding
       verbatim. `back` is the one deliberate omission.
-    - [ ] test on the SP: L2 loads, Select+L2 saves a new slot, Select alone still reaches the
-          game, and holding Select does not mute the face buttons or the F8 overlay
+    - [x] gptokeyb2 parse checked on the SP (2026-09-10) with
+          `cd /mnt/mmc/MUOS/PortMaster && LD_PRELOAD=./libinterpose.aarch64.so ./gptokeyb2 /bin/true -d -H back -c .../picori.ini`:
+          prints "set hotkey as back", `[controls]` l2 = "f6" / y = "v" / r2 = "tab", and
+          `[controls:hk_hotkey]` l2 = "home" with every other bind repeated and `back =` empty.
+          `-H hotkey` is in this build's usage string, so the flag is supported, not tolerated.
+    - [ ] still needs a button press on the SP: that L2 loads and Select+L2 saves a new slot,
+          that a Select *tap* still reaches the game (the dump cannot show what gptokeyb2 does
+          with the modifier on release), and that holding Select does not mute the face buttons
+          or the F8 overlay
   - [x] menu button differs per device (Menu on the Pro S, R3 on the R36S): that is the firmware's
         Guide mapping, nothing to change in the package. Noted in the port README's controls table.
 
