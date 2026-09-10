@@ -71,6 +71,20 @@ if [ ! -f "$GAMEDIR/conf/.scale" ]; then
   touch "$GAMEDIR/conf/.scale"
 fi
 
+# Settings-overlay scale. The engine works this out itself as
+# min(w/640, h/480) of the *window*, but it reads that once during init,
+# which happens before the fullscreen request lands: with window_scale 1 it
+# sees 240x160 and pins the overlay at its 0.5 floor, which is what the
+# TrimUI Pro S and R36S testers hit as "the menu is very hard to read", and
+# it never recomputes, hence "requires restart". Compute it from the panel
+# instead, in tenths, clamped to the engine's own 0.5-2.0 range.
+ui_tenths=$(( PANEL_WIDTH * 10 / 640 ))
+ui_tenths_v=$(( PANEL_HEIGHT * 10 / 480 ))
+[ "$ui_tenths_v" -lt "$ui_tenths" ] && ui_tenths=$ui_tenths_v
+[ "$ui_tenths" -lt 5 ] && ui_tenths=5
+[ "$ui_tenths" -gt 20 ] && ui_tenths=20
+export TMC_UI_SCALE="${TMC_UI_SCALE:-$(( ui_tenths / 10 )).$(( ui_tenths % 10 ))}"
+
 GAME_SDL_VIDEODRIVER=""
 if [ -n "$SDL_VIDEODRIVER" ]; then
   export SDL3SHIM_SDL2_VIDEODRIVER="$SDL_VIDEODRIVER"

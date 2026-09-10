@@ -88,8 +88,36 @@
         all when the config says `fullscreen: true`: the game creates the window at
         240x160*scale and asks for fullscreen afterwards, and on those two CFWs the request
         appears not to resize the window.
-  - [ ] confirm with Kdog on the next zip that scale 4 on the Pro S looks right (960x640 inside
-        1280x720 with pixel_perfect) or whether 3 was a deliberate preference
+  - [x] the real reason scale 3 helped him, found by reading the fork: `Port_UiScale()` in
+        `port_imgui_menu.cpp` computes min(w/640, h/480) from the *window*, caches it on the
+        first call, and that call happens in `Port_ImGui_Init` -- which runs inside
+        `Port_PPU_Init`, before `port_main.c:634` asks for fullscreen. With window_scale 1 it
+        therefore measures 240x160, clamps to its 0.5 floor and stays there: a half-size
+        overlay on any panel, and no way to fix it without a restart. window_scale 3 made the
+        pre-fullscreen window 720x480, which measures 1.0. So this is the same defect
+        EpicNoob reported as "the menu is very hard to read" on the TSP, not a fullscreen
+        failure -- the earlier guess in the window_scale commit. The seed stays (it is what
+        both testers did by hand, and it is right for a windowed launch) but it is no longer
+        the fix.
+  - [x] launcher exports `TMC_UI_SCALE` computed from `DISPLAY_WIDTH`/`DISPLAY_HEIGHT` in
+        tenths, clamped to the engine's own 0.5-2.0: 1.5 on 1280x720, 1.0 on 640x480, 0.5 on
+        320x240. The env var is read before the window-size guess, so this fixes the overlay
+        on every panel with the sp6 binary already shipped -- no CI round trip.
+  - [x] `"console_ui": 1` in config.json. The fork's console shell is the D-pad/A/B/L-R
+        handheld UI (full-screen, one group at a time, footer legend, B backs out and closes)
+        and it is exactly the conventional layout, but `PORT_CONSOLE_UI_AUTO` only picks it
+        when the window is <= 860 px wide. A 1280x720 handheld therefore got the desktop
+        ribbon -- 15 tabs, hover tooltips, double-click to activate, a corner close button --
+        which is what "hard to change this setting in the menu" really was. Pinned on: every
+        target device here is a handheld.
+  - [ ] fork follow-up (needs a CI build, so not in this zip): make `Port_UiScale()` read
+        `SDL_GetCurrentRenderOutputSize` and recompute on `SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED`
+        instead of caching the pre-fullscreen window size -- same fix d573de767 applied to the
+        boot splash. Consider also whether AUTO should key off "no mouse" rather than window
+        width, so a 720p handheld gets the console shell without the package pinning it.
+  - [ ] confirm with Kdog on the next zip: overlay legible at 1280x720 with no hand-editing,
+        console shell (not the ribbon) on both devices, and whether scale 4 or his 3 reads
+        better on the Pro S
   - [x] "L2 save, X or Y load is weird mapping": fixed. Every convention on these devices has
         L = load and R = save (RetroArch: hotkey+L1 load, hotkey+R1 save, hotkey+L2/R2 slot;
         modifier-less ports: bare L2 load, R2 save), and the old ini had L2 saving and a face

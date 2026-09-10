@@ -82,6 +82,7 @@
     },
     "color_correction": false,
     "console_parity": false,
+    "console_ui": 1,
     "decouple_render": true,
     "discord_rpc": false,
     "fast_forward_fps": 35,
