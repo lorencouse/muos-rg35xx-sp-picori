@@ -110,6 +110,18 @@
         ribbon -- 15 tabs, hover tooltips, double-click to activate, a corner close button --
         which is what "hard to change this setting in the menu" really was. Pinned on: every
         target device here is a handheld.
+  - [x] fork 837f051a6 (`rg35xx-sp-audio-ui`, pushed, needs a CI build and a new tag to reach
+        the device): the console shell covered the whole screen, so the Display group hid the
+        only evidence for what it changes. A `ConsoleCat` can now be marked `preview`; while
+        one is open the shell docks to part of the screen and both present paths fit the game
+        frame into the rest. Wide outputs split side by side (the frame is 3:2), squarer ones
+        stack; the picture takes 0.46, widens to 0.5 if that is what gives it a whole GBA
+        frame, and gets no split at all below that (320x240). 1280x720 -> 589x393 picture
+        beside a 691x720 panel; 640x480 -> 331x221 above a 640x259 panel. The game is frozen
+        while the menu is up but the present path re-rasterises, so aspect, scale, filter,
+        colour correction, persistence and fill all still apply live.
+    - [ ] cut a fork release (v0.8.3-sp7?) and repin `TMC_TAG` / `TMC_SHA256` in build.sh, then
+          tag v2.1.0 here. Nothing else in this round needs a new binary.
   - [ ] fork follow-up (needs a CI build, so not in this zip): make `Port_UiScale()` read
         `SDL_GetCurrentRenderOutputSize` and recompute on `SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED`
         instead of caching the pre-fullscreen window size -- same fix d573de767 applied to the
