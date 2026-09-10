@@ -4,6 +4,8 @@ PortMaster packaging for [Project Picori](https://github.com/999sian/tmc), the
 PC port of *The Legend of Zelda: The Minish Cap*. The player-facing README is
 [`port/README.md`](port/README.md).
 
+![The Minish Cap running on an RG35XX SP](docs/img/social-preview.png)
+
 ## Layout
 
 ```
