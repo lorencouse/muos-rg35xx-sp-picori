@@ -17,8 +17,8 @@ This port does not include the game. Copy your ROM into `ports/picori/` as `base
 | Y | Second extra item slot |
 | L1 | GBA L |
 | R1 | GBA R |
-| L2 | Load the selected save state |
-| Select + L2 | Save state to a new slot |
+| L2 | Save state to a new slot |
+| Select + L2 | Load the selected save state |
 | R2 (hold) | Fast-forward |
 | Start | Pause menu |
 | Select | Select (no in-game effect while held for the combo above) |
