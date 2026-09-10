@@ -21,7 +21,7 @@ trap 'rm -rf "$STAGE"' EXIT
 TMC_REPO="lorencouse/tmc"
 TMC_TAG="${TMC_TAG:-v0.8.3-sp7}"
 TMC_ASSET="tmc-multi-linux-arm64-${TMC_TAG}.tar.gz"
-TMC_SHA256="${TMC_SHA256:-37c006546720ee97a60109b5c872409d41c89f47677ffbe86e2a2903082d6e3f}"
+TMC_SHA256="${TMC_SHA256:-8fa510972be8d797dbede9c5af2cbfd98ab35766a48ed8c92be45483a6eefcff}"
 
 SHIM_REPO="lorencouse/muos-rg35xx-sp-picori"
 SHIM_TAG="${SDL3SHIM_TAG:-latest}"       # every release of this repo carries the shim
