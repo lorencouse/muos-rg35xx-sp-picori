@@ -2,6 +2,8 @@
 
 ## Where it stands (2026-09-17)
 
+- Package `v2.2.0` tagged and built by CI from fork `v0.8.3-sp8`; the fork's release job
+  needed its linux tarballs uploaded by hand (GitHub upload flake) and the draft published.
 - Fork `v0.8.3-sp8` tagged: runtime_only extraction, loader survives a broken
   `assets_src`, ENOSPC in the log, and the save-state picker (X = save page,
   Y = load page), all verified on the SP. The picker was driven over adb by
@@ -60,7 +62,7 @@
       port.json, tested on the SP (muOS). v2.0.0 zip:
       https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.0.2 (v2.0.0 is the
       black-screen build, do not link it)
-- [ ] Hand EpicNoob the **v2.1.0** zip for the
+- [ ] Hand EpicNoob the **v2.2.0** zip for the
       TSP re-test and ask for `ports/picori/log.txt` back.
 - [ ] Device-side only: add a `picori)` case to `/opt/muos/script/mux/menu_tap.sh` that injects 312 so
       physical MENU on this SP opens the settings overlay instead of the pause menu.
@@ -96,7 +98,7 @@
         TMC_AUDIO_FRAMES / audio_frames / bigger-default-buffer logic (2048 frames) on Linux
         aarch64, not just Android. Needs a TSP re-test; if still choppy, try
         `echo 4096 > ports/picori/audio_frames`.
-  - [ ] ask EpicNoob to re-test the v2.1.0 zip and send `ports/picori/log.txt`
+  - [ ] ask EpicNoob to re-test the v2.2.0 zip and send `ports/picori/log.txt`
 
 - TrimUI Pro S / Knulli Scarab 20260720 (1280x720) and R36S / AmberELEC (Kdog, 2026-09-10, v2.0.2):
   both run. On both he had to set window scale 3 by hand, and the scale setting is itself hard to

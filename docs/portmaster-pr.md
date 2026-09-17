@@ -4,6 +4,9 @@ Everything needed to open the PR against
 [PortsMaster/PortMaster-New](https://github.com/PortsMaster/PortMaster-New),
 kept here so the repo, not a chat log, holds it.
 
+Current zip: https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.2.0
+(tmc v0.8.3-sp8). Do not link v2.0.0, the black-screen build.
+
 ## Steps
 
 1. Build and check the zip: `./build.sh <version>` (CI does the same on a
