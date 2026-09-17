@@ -19,9 +19,9 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
 TMC_REPO="lorencouse/tmc"
-TMC_TAG="${TMC_TAG:-v0.8.3-sp7}"
+TMC_TAG="${TMC_TAG:-v0.8.3-sp8}"
 TMC_ASSET="tmc-multi-linux-arm64-${TMC_TAG}.tar.gz"
-TMC_SHA256="${TMC_SHA256:-8fa510972be8d797dbede9c5af2cbfd98ab35766a48ed8c92be45483a6eefcff}"
+TMC_SHA256="${TMC_SHA256:-b576ff723e224f87f928414c3197365364830a4d44914eba734a598fc3490877}"
 
 SHIM_REPO="lorencouse/muos-rg35xx-sp-picori"
 SHIM_TAG="${SDL3SHIM_TAG:-latest}"       # every release of this repo carries the shim
@@ -50,7 +50,8 @@ else
   cp "$bin_cache" "$STAGE/tmc_pc"
 fi
 got="$(sha256_of "$STAGE/tmc_pc")"
-if [ -n "$TMC_SHA256" ] && [ "$got" != "$TMC_SHA256" ]; then
+# The pin belongs to the release download; a local binary is whatever it is.
+if [ -z "${TMC_BINARY:-}" ] && [ -n "$TMC_SHA256" ] && [ "$got" != "$TMC_SHA256" ]; then
   echo "!! tmc_pc SHA-256 mismatch: expected $TMC_SHA256, got $got" >&2
   exit 1
 fi
