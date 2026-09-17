@@ -1,5 +1,20 @@
 # TODO
 
+## Where it stands (2026-09-17)
+
+- Fork `v0.8.3-sp8` tagged: runtime_only extraction, loader survives a broken
+  `assets_src`, ENOSPC in the log, and the save-state picker (X = save page,
+  Y = load page), all verified on the SP. The picker was driven over adb by
+  writing key events to gptokeyb2's uinput node (see the memory note).
+- Package: launcher trimmed to the template plus the documented seeds,
+  README in the PortMaster section layout, `port.json` items with the
+  directory slash, testing thread current. `docs/portmaster-pr.md` holds the
+  PR text and the tester replies; `tools/stage-portmaster.sh` lays the zip
+  out in a PortMaster-New checkout for `build_release.py --do-check`.
+- Left for hands and other people: ArkOS and ROCKNIX runs, a long play
+  session on the SP for audio and autosave hitching, the three tester replies,
+  the Cebion reply, opening the PR.
+
 ## Before the PortMaster PR
 
 - [x] Fork: `portmaster-shared-sdl3` merged into `rg35xx-sp-audio-ui`, release `v0.8.3-sp5` published
@@ -18,8 +33,8 @@
   - [ ] Playtest on the SP (v2.0.0 installed, saves in place). Findings 2026-09-05, see
         "Playtest findings" below: the v2.0.0 zip shows the LOADING splash forever once the
         menu hint has been dismissed; fixed on the SP by `present_thread: false` (committed).
-    - [ ] frame rate in a busy area (tmc_pc ~38-42% CPU in the Minish Woods at the 60 fps target
-          with the synchronous present)
+    - [~] frame rate in a busy area: 55 fps drawn / 60 tps in the Minish Woods with a text box
+          up (2026-09-17, sp8, on-screen counter). A longer session still wanted.
     - [ ] audio: device opened 44100 Hz / 1920 frames; listen for dropouts. If it stutters, try
           `echo 4096 > /mnt/mmc/ports/picori/audio_frames` and relaunch
     - [x] save states: verified on the SP 2026-09-10. Mapping settled as L2 = save to a new
@@ -38,8 +53,8 @@
       dropped (slot picking lives in the overlay's Saves tab), gptokeyb2 licence added,
       testing_thread.txt added (kept out of the zip), README thank-you rewritten, packaging comments
       removed from the Compile section, no em dashes anywhere in port/.
-- [ ] PR description must use the PortMaster PR template and honestly tick the AI-assisted box:
-      be able to explain every non-standard line (the aspect seed and the SDL3SHIM passthrough).
+- [x] PR description drafted to the PortMaster template in `docs/portmaster-pr.md`, AI-assisted
+      box ticked, every non-standard launcher line explained there.
 - [ ] Reply to Cebion on Discord in my own words. Facts to lean on: template launcher, gptokeyb2
       ini, port.json v4, mixv1 cover, sdl3shim instead of weston, source branch cited in README and
       port.json, tested on the SP (muOS). v2.0.0 zip:
@@ -157,8 +172,10 @@
           Both modes verified on the macOS host build, including the switch.
     - [x] ini, launcher (no `-H back`) and config pushed to the SP; gptokeyb2 parses
           `x = "insert"` / `y = "end"`, and the port launches and reaches AgbMain with them.
-    - [ ] device test of the picker itself: needs the new binary. X opens the save page, Y the
-          load page, previews are the real frames, A acts, B closes.
+    - [x] device test of the picker itself (2026-09-17, sp8 binary, keys injected over adb):
+          Y opens the load page with the real frames in the previews, X switches it to the
+          save page, B closes, A on an empty slot toasts, A on slot 2 resumed a Minish Woods
+          state (55 fps drawn, 60 tps).
   - [ ] fork follow-up (needs a CI build, so not in this zip): make `Port_UiScale()` read
         `SDL_GetCurrentRenderOutputSize` and recompute on `SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED`
         instead of caching the pre-fullscreen window size -- same fix d573de767 applied to the

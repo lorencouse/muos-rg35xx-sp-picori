@@ -67,6 +67,12 @@
         "state_load": [
             "SDLK:0x4000003f"
         ],
+        "state_menu_save": [
+            "SDLK:0x40000049"
+        ],
+        "state_menu": [
+            "SDLK:0x4000004d"
+        ],
         "state_next_slot": [
             "SDLK:0x4000004e"
         ],

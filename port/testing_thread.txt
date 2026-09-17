@@ -8,35 +8,37 @@ Title: The Legend of Zelda: The Minish Cap (Project Picori)
 URL: https://github.com/lorencouse/tmc/tree/rg35xx-sp-audio-ui
 
 Instructions:
-Not ready to run. Copy your Minish Cap ROM to ports/picori as baserom.gba (USA), baserom_eu.gba or baserom_jp.gba. The first launch extracts assets from the ROM and takes about two minutes.
+Not ready to run. Copy your Minish Cap ROM to ports/picori as baserom.gba (USA), baserom_eu.gba or baserom_jp.gba. The first launch extracts assets from the ROM.
 
 | Button | Action |
 |--|--|
 | D-pad | Move |
 | A | Sword / confirm |
 | B | Item / cancel |
-| X | Extra item slot |
-| Y | Load the selected save state |
+| X | Save-state picker, ready to save |
+| Y | Save-state picker, ready to load |
 | L1 | GBA L |
 | R1 | GBA R |
-| L2 | Save state to the next slot |
+| L2 | Save a state to a new slot |
 | R2 (hold) | Fast-forward |
 | Start | Pause menu |
 | Select | Select |
-| Menu | Port settings overlay |
+| Menu | Port settings |
+| Start + Select | Quit |
 
 CFW Tests:
-[ ] AmberELEC
+[ ] ArkOS
+[x] AmberELEC (R36S, Kdog)
 [ ] dArkOS
-[ ] MuOS
+[x] MuOS (RG35XX SP, porter; TrimUI Smart Pro, EpicNoob)
 ROCKNIX
 -> [ ] Libmali
 -> [ ] Panfrost
 -> [ ] Adreno (Optional)
-[ ] Knulli
+[x] Knulli (TrimUI Pro S, Kdog)
 
 Resolutions:
 [ ] 480x320 (Optional)
-[ ] 640x480
+[x] 640x480
 [ ] 720x720 (RGB30) (Optional)
-[ ] Higher resolutions (e.g., 1280)
+[x] Higher resolutions (e.g., 1280) (TrimUI Pro S and Smart Pro)

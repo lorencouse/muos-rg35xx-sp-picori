@@ -1,38 +1,56 @@
 ## Notes
 
-Thanks to [999sian](https://github.com/999sian/tmc) and the Project Picori contributors for the native PC port of *The Minish Cap*, which runs the decompiled game at full speed with save states and a built-in settings menu. Thanks to the [zeldaret](https://github.com/zeldaret/tmc) team for the decompilation and to [bmdhacks](https://github.com/bmdhacks/SDL/tree/sdl2-backend) for the SDL3-to-SDL2 shim.
+Thanks to [999sian](https://github.com/999sian/tmc) and the Project Picori contributors for the native PC port of *The Legend of Zelda: The Minish Cap*, to the [zeldaret](https://github.com/zeldaret/tmc) team for the decompilation it is built on, and to [bmdhacks](https://github.com/bmdhacks/SDL/tree/sdl2-backend) for the SDL3-to-SDL2 shim that lets an SDL3 program run on these handhelds.
 
-Source for this build: https://github.com/lorencouse/tmc/tree/rg35xx-sp-audio-ui
-
-This port does not include the game. Copy your ROM into `ports/picori/` as `baserom.gba` (USA), `baserom_eu.gba` or `baserom_jp.gba`. The first launch extracts the game's assets from the ROM and takes about two minutes.
+**This port does not include the game.** Copy your ROM into `ports/picori/` as `baserom.gba` (USA), `baserom_eu.gba` (Europe) or `baserom_jp.gba` (Japan). The first launch extracts the game assets from the ROM into `ports/picori/assets/`; later launches skip that.
 
 ## Controls
 
 | Button | Action |
 |--|--|
-| D-pad | Move |
+| D-pad / left stick | Move |
 | A | Sword / confirm |
 | B | Item / cancel |
-| X | Extra item slot (assign it in the pause menu) |
-| Y | Second extra item slot |
+| X | Save-state picker, ready to save |
+| Y | Save-state picker, ready to load |
 | L1 | GBA L |
 | R1 | GBA R |
-| L2 | Save state to a new slot |
-| Select + L2 | Load the selected save state |
+| L2 | Save a state to a new slot |
 | R2 (hold) | Fast-forward |
 | Start | Pause menu |
-| Select | Select (no in-game effect while held for the combo above) |
-| Menu | Port settings (also the "L" prompt on the file select) |
+| Select | Select |
+| Menu (Guide) | Port settings |
+| Start + Select | Quit |
 
-The settings overlay opens on whatever button your firmware reports as the controller's Guide: the Menu button on muOS and on Knulli, R3 on the R36S under AmberELEC. It is the port's handheld shell, one group of settings at a time: D-pad moves, A opens or toggles a row, B backs out (and closes the overlay from the top level), L1 and R1 step through the groups. The footer always spells this out, and the launcher sizes the text from your panel, so nothing in there needs a mouse or a restart.
+The settings menu opens on whichever button your firmware reports as the controller's Guide button: Menu on muOS and Knulli, R3 on the R36S under AmberELEC. It is a handheld menu, one group of settings at a time: D-pad moves, A opens or toggles a row, B backs out and closes it from the top level, L1 and R1 step through the groups. The footer lists the buttons. The launcher sizes its text from the panel, so nothing in it needs a mouse or a restart.
 
-Save states are separate from the in-game save. Pick the slot to load in the settings overlay under Saves, which shows a thumbnail per slot.
+## Save states
+
+Save states are separate from the in-game save. L2 takes one at any time and rolls through twenty slots, so a run leaves a history instead of one overwritten state. The game also autosaves to a three-slot ring every minute.
+
+X and Y open the picker, a full-screen page with one slot's screenshot, when it was written, and a filmstrip of the neighbouring slots. X opens it ready to save, Y ready to load, and A does whichever the page is on. Left and right move one slot, up and down (or L1 and R1) jump five, B closes. Pressing the other of X and Y switches the page instead of acting, so arriving through the wrong door costs one press and never a run.
+
+X and Y are the port's two extra equip slots on a keyboard (C and V). Nothing in the game assigns an item to them on a handheld, so this package uses them for the picker.
+
+## Saves
+
+The in-game save (`tmc.sav`), the save states (`state_*.bin`), the config and the extracted assets all live in `ports/picori/`. Deleting the port folder removes them; copying the folder to another card keeps them.
+
+## Known issues
+
+- The first launch after copying the ROM spends some seconds extracting assets before anything is drawn. Later launches show the Nintendo logo within a few seconds.
+
+## Source
+
+Built from the `rg35xx-sp-audio-ui` branch of <https://github.com/lorencouse/tmc>, a fork of [999sian/tmc](https://github.com/999sian/tmc) that adds a linear audio resampler, a bigger audio buffer for Linux handhelds, a scalable handheld settings menu, a stretch aspect mode and the save-state picker.
+
+Licensed GPL-3.0-or-later, same as Project Picori. Third-party licences are in `picori/licenses/`.
 
 ## Compile
 
 ### tmc_pc
 
-Built in a Debian bullseye container on an arm64 host (glibc 2.31 floor). `TMC_SDL3_SHARED=1` links SDL3 as a shared library so the shim below can replace it.
+Built in a Debian bullseye container on an arm64 host, so the binary loads on old CFW glibc (it needs GLIBC 2.29). `TMC_SDL3_SHARED=1` links SDL3 as a shared library so the shim below can replace it.
 
 ```shell
 git clone -b rg35xx-sp-audio-ui https://github.com/lorencouse/tmc.git
@@ -41,7 +59,7 @@ git submodule update --init --recursive --depth 1
 TMC_SDL3_SHARED=1 python3 build.py --usa --slim
 ```
 
-The binary is `build/pc/tmc_pc`.
+The binary is `build/pc/tmc_pc`, shipped as `picori/tmc_pc.aarch64`.
 
 ### SDL3-on-SDL2 shim
 
@@ -64,4 +82,4 @@ cmake .. \
 make -j$(nproc)
 ```
 
-The shim is `build/libSDL3.so.0.*`.
+The shim is `build/libSDL3.so.0.*`, shipped as `picori/libs.aarch64/libSDL3.so.0`.

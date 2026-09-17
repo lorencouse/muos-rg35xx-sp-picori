@@ -21,6 +21,9 @@ port/                                   the package, as PortMaster wants it
 build.sh                                assembles dist/<version>/picori.zip
 .github/workflows/release.yml           builds the shim and the zip on a v* tag
 tools/grab-screen.sh                    fb0 screenshot over adb
+tools/stage-portmaster.sh               unpack a built zip into a PortMaster-New checkout
+tools/bullseye-arm64.Dockerfile         local aarch64 build image for tmc_pc
+docs/portmaster-pr.md                   PR text, the non-standard launcher lines, submission steps
 docs/weston-port-notes.md               notes from the earlier weston-based launcher
 ```
 
@@ -44,7 +47,7 @@ TMC_BINARY=./tmc_pc SDL3SHIM_LIB=./libSDL3.so.0 ./build.sh 2.0.0-dev
 ```
 
 `build.sh` downloads `tmc_pc` from the fork release named by `TMC_TAG`
-(default `v0.8.3-sp6`) and the shim from this repo's `sdl3shim` release
+(pinned by tag and SHA-256 in `build.sh`) and the shim from this repo's `sdl3shim` release
 unless both are given locally. Pushing a `v*` tag runs the workflow, which
 builds the shim in a Debian bullseye arm64 container (glibc 2.31) and attaches
 `picori.zip` and `libSDL3.so.0` to the release.
@@ -59,12 +62,11 @@ in a bullseye container so the binary loads on old CFW glibc.
 
 ## Status
 
-Reworked on 2026-09-05 against the PortMaster review and Cebion's porting
-reference: template launcher, port.json v4, gptokeyb2 ini, mixv1 cover,
-sdl3shim instead of weston.
-Not yet run on hardware in this form. Before a PortMaster PR it needs the
-fork release cut with `TMC_SDL3_SHARED=1`, a device test on muOS, and
-testing on the other CFWs.
+Packaged to the PortMaster template (launcher, port.json v4, gptokeyb2 ini,
+licences, README sections). Tested on the RG35XX SP under muOS by the porter,
+and by testers on Knulli (TrimUI Pro S, 1280x720), AmberELEC (R36S) and muOS
+(TrimUI Smart Pro). ArkOS and ROCKNIX are untested. `docs/portmaster-pr.md`
+has the PR text and what remains before opening it.
 
 ## Licence
 

@@ -30,19 +30,22 @@ if [ ! -f "$GAMEDIR/baserom.gba" ] && [ ! -f "$GAMEDIR/baserom_eu.gba" ] && [ ! 
 fi
 
 if [ ! -d "$GAMEDIR/assets" ]; then
-  pm_message "First launch: extracting game assets from the ROM. This takes about two minutes."
+  pm_message "First launch: extracting game assets from the ROM. This takes a moment."
 fi
+
+$ESUDO chmod +x "$GAMEDIR/$BINARY"
 
 mkdir -p "$GAMEDIR/conf"
 export XDG_DATA_HOME="$GAMEDIR/conf"
 export LD_LIBRARY_PATH="$GAMEDIR/libs.${DEVICE_ARCH}:$LD_LIBRARY_PATH"
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
+# Skip the port's desktop ROM/language picker; the ROM is found from the paths above.
 export TMC_AUTOPLAY=1
 
 PANEL_WIDTH=${DISPLAY_WIDTH:-640}
 PANEL_HEIGHT=${DISPLAY_HEIGHT:-480}
 
-# Non-4:3 panels get integer scaling instead of the 4:3 stretch, once.
+# First launch only: non-4:3 panels get integer scaling instead of the 4:3 stretch.
 if [ ! -f "$GAMEDIR/conf/.aspect" ]; then
   if [ $(( PANEL_WIDTH * 3 )) -ne $(( PANEL_HEIGHT * 4 )) ]; then
     sed -i 's/"aspect_mode": "stretch"/"aspect_mode": "pixel_perfect"/' "$GAMEDIR/config.json"
@@ -50,13 +53,11 @@ if [ ! -f "$GAMEDIR/conf/.aspect" ]; then
   touch "$GAMEDIR/conf/.aspect"
 fi
 
-# Seed window_scale from the panel, once. The game creates its window at
-# 240x160 times this scale and only then asks for fullscreen; where that
-# request is a no-op (reported on Knulli/TrimUI Pro S at 1280x720 and on
-# AmberELEC/R36S) scale 1 leaves a postage-stamp window, and the scale
-# setting itself is then too small to read in the overlay. Take the largest
-# whole multiple that fits the panel, capped at the game's own limit of 10.
-# The sed only matches the shipped default, so a hand-picked scale stands.
+# First launch only: window_scale = largest whole multiple of 240x160 that fits
+# the panel (1280x720 -> 4, 640x480 -> 2). The game opens its window at
+# 240x160 * window_scale before it asks for fullscreen; on Knulli and AmberELEC
+# that request left a scale-1 window postage-stamp sized. Only the shipped
+# default is rewritten, so a scale picked in the settings menu stands.
 if [ ! -f "$GAMEDIR/conf/.scale" ]; then
   scale=$(( PANEL_WIDTH / 240 ))
   scale_v=$(( PANEL_HEIGHT / 160 ))
@@ -71,13 +72,9 @@ if [ ! -f "$GAMEDIR/conf/.scale" ]; then
   touch "$GAMEDIR/conf/.scale"
 fi
 
-# Settings-overlay scale. The engine works this out itself as
-# min(w/640, h/480) of the *window*, but it reads that once during init,
-# which happens before the fullscreen request lands: with window_scale 1 it
-# sees 240x160 and pins the overlay at its 0.5 floor, which is what the
-# TrimUI Pro S and R36S testers hit as "the menu is very hard to read", and
-# it never recomputes, hence "requires restart". Compute it from the panel
-# instead, in tenths, clamped to the engine's own 0.5-2.0 range.
+# Settings-menu text scale from the panel, in tenths, clamped to the game's
+# 0.5-2.0 range (1.0 on 640x480, 1.5 on 1280x720). The game would otherwise
+# size it from its pre-fullscreen 240x160 window and pin it at the floor.
 ui_tenths=$(( PANEL_WIDTH * 10 / 640 ))
 ui_tenths_v=$(( PANEL_HEIGHT * 10 / 480 ))
 [ "$ui_tenths_v" -lt "$ui_tenths" ] && ui_tenths=$ui_tenths_v
@@ -85,6 +82,7 @@ ui_tenths_v=$(( PANEL_HEIGHT * 10 / 480 ))
 [ "$ui_tenths" -gt 20 ] && ui_tenths=20
 export TMC_UI_SCALE="${TMC_UI_SCALE:-$(( ui_tenths / 10 )).$(( ui_tenths % 10 ))}"
 
+# SDL3 shim: pass the CFW's SDL2 driver choice through to the SDL2 underneath.
 GAME_SDL_VIDEODRIVER=""
 if [ -n "$SDL_VIDEODRIVER" ]; then
   export SDL3SHIM_SDL2_VIDEODRIVER="$SDL_VIDEODRIVER"
@@ -97,7 +95,7 @@ if [ -n "$SDL_AUDIODRIVER" ]; then
   GAME_SDL_AUDIODRIVER=sdl2
 fi
 
-$GPTOKEYB2 "$BINARY" -H back -c "$GAMEDIR/picori.ini" &
+$GPTOKEYB2 "$BINARY" -c "$GAMEDIR/picori.ini" &
 
 pm_platform_helper "$GAMEDIR/$BINARY"
 
