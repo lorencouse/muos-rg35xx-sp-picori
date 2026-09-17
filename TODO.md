@@ -130,6 +130,35 @@
           `tmc_pc.aarch64.sp6.bak`. sp7 also carries the split for *every* console group, not
           just Display: stepping with L1/R1 no longer jumps between half the screen and all of
           it. Verified on the SP.
+  - [ ] save-state picker (fork, needs a CI build and a new tag): full-screen slot page on its own
+        binding -- one big preview, timestamp plus relative age, a filmstrip of the neighbours,
+        A load / X save here / Y save to a new slot / B close. Opened by `state_menu`
+        (keyboard End), which the package puts on **Select+L2**; bare L2 still saves to a new
+        slot, and Select+L2 no longer loads blind. Verified on the macOS host build only.
+    - [x] the reason no preview has ever been visible, here or in the Saves tab: the thumbnail
+          code pushed its `ImTextureData` straight into `platform_io.Textures`, which ImGui
+          rebuilds every frame from its own atlases plus the *user* list, so the create request
+          was wiped before the renderer backend saw it and every slot drew as a white rectangle
+          (confirmed on the host: status stuck at WantCreate, TexID 0). Now registered with
+          `ImGui::RegisterUserTexture` and drawn with nearest filtering, since the picker scales
+          a 120x80 capture up 3-4x.
+    - [x] **Select+L2 never fired on the device** (reported 2026-09-10: it just quick-saved, i.e.
+          the bare `[controls]` L2 = `home` was used and the `hk_hotkey` layer was not entered).
+          The `-d` dump has always shown the layer parsed and `-H back` accepted, so the dump
+          proves nothing about a real press; the layer has never been confirmed working with
+          hands on any build. Rather than keep debugging gptokeyb2's modifier, the layer and
+          `-H back` are gone and the pickers moved to plain buttons.
+    - [x] **X = picker ready to save, Y = picker ready to load** (asked for 2026-09-10). Two
+          engine actions (`state_menu_save` / `state_menu`, keyboard Insert / End), and inside
+          the page the other button switches modes instead of acting -- so coming in the wrong
+          door costs one press and can never throw a run away. A is always the mode's action.
+          X and Y were the soft equip slots; nothing on this device has ever assigned an item
+          to them (no `tmc.softslots` sidecar), and they are still C and V on a keyboard.
+          Both modes verified on the macOS host build, including the switch.
+    - [x] ini, launcher (no `-H back`) and config pushed to the SP; gptokeyb2 parses
+          `x = "insert"` / `y = "end"`, and the port launches and reaches AgbMain with them.
+    - [ ] device test of the picker itself: needs the new binary. X opens the save page, Y the
+          load page, previews are the real frames, A acts, B closes.
   - [ ] fork follow-up (needs a CI build, so not in this zip): make `Port_UiScale()` read
         `SDL_GetCurrentRenderOutputSize` and recompute on `SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED`
         instead of caching the pre-fullscreen window size -- same fix d573de767 applied to the
@@ -181,6 +210,52 @@
           or the F8 overlay
   - [x] menu button differs per device (Menu on the Pro S, R3 on the R36S): that is the firmware's
         Guide mapping, nothing to change in the package. Noted in the port README's controls table.
+
+- RG35XX Plus / muOS Pixie (joshuarcastillo, 2026-09-16, v2.0.2): "unable to create save file".
+  The card is full, and the port is what filled it. Three lines in his log are the same fault:
+  `[quicksave] short write state_auto_0.bin (4064/665836)`, `[SAVE] ERROR: atomic write of
+  tmc.sav failed`, and `assets_src/usa/texts.json` parsing as "unexpected end of input" (an
+  empty file, i.e. a write that was cut off). He then reports `ports/picori` sitting at 5.1 GB.
+  - [x] root cause, measured on the host 2026-09-17: `runtime_only` in the extractor only
+        *deleted* `assets_src/` after a successful run; the tree was still written in full
+        first. That tree is 121 MB in 24,127 files. On a large exFAT card (128 KB clusters on
+        64 GB and up) that is about 3 GB of cluster slack, plus `rom_data/` (2,789 four-KB
+        files, ~350 MB the same way), which is the 5.1 GB. His extraction was interrupted (the
+        log ends in `Killed`, the launcher's Start+Select path) so the tree never got deleted,
+        and the next launch found the truncated `texts.json`.
+  - [x] fork (`rg35xx-sp-audio-ui`, uncommitted 2026-09-17, needs a CI build and an sp8 tag):
+        `runtime_only` now really skips the editable tree. Every low-level writer
+        (`write_binary_file`, `write_text_buffered`, `BackgroundWriter::Submit`,
+        `PortAssetPipeline::Write*`) treats a path under a registered root as already written
+        (`PortAssetLog::SetSuppressedWriteRoot`), and a stale `assets_src/<region>` is wiped
+        before extraction starts. Host check: the nine paks and eleven JSONs are byte-identical
+        to a run that wrote the editable tree, 0.4 s instead of 2.4 s, no `assets_src/` left.
+  - [x] a leftover `assets_src/` no longer bricks assets: `EnsureAssetGroupCache` falls back
+        to `FindRuntimeAssetsRoot()` when the rebuild fails and logs `[ASSET] Ignoring ...;
+        using the existing runtime assets`. Verified headless on the host with a truncated
+        `texts.json` next to a complete `assets/usa`: the game reaches AgbMain.
+  - [x] `[SAVE] ERROR` and `[quicksave] short write` now print `strerror(errno)`, so "No space
+        left on device" is in the log. The quicksave also checks `fclose` (where ENOSPC surfaces
+        for a buffered write) and removes the truncated slot file.
+  - [x] all three verified on the SP 2026-09-17 with a local aarch64 build (see
+        `tools/bullseye-arm64.Dockerfile`; binary md5 8dc11569, kept as
+        `.cache/tmc_pc-local-sp8-8dc11569`, the sp7 binary is `tmc_pc.aarch64.sp7.bak` on the
+        device): a seeded truncated `assets_src/usa` next to a good `assets/usa` logs the
+        `[ASSET] Ignoring` line and boots; with `assets/` removed the cold extraction takes
+        9.6 s (was about two minutes), leaves no `assets_src/`, and the title screen draws.
+  - [ ] reply: his fix today is to free space, then `rm -rf ports/picori/assets_src` (or just
+        wait for the next zip, which does that itself); first launch re-extracts in about two
+        minutes. Ask for `du -sh /mnt/sdcard/ports/picori/*` only if the folder is still large
+        after that, since `rom_data/` alone is a few hundred MB on a 128 KB-cluster card.
+  - [ ] `rom_data/`: 2,789 loose 4 KB pages is the wrong shape for an SD card for the same
+        reason. Pack them into one file (or read straight from `baserom.gba`, which is sitting
+        next to it) in a later cut.
+
+- R36S / DARKOSRE (CrispTheBunz, 2026-09-16): runs, but segfaults, "mainly during boot".
+  - [ ] untested CFW and untested device. Ask for `ports/picori/log.txt` and the
+        `bugreport_*` folder the crash handler writes next to the binary (`backtrace.txt` is
+        the one that matters), and which zip. Nothing to guess at until then: the R36S on
+        AmberELEC runs (Kdog, above), so this is DARKOSRE or its SDL, not the device.
 
 ## Playtest findings (SP, 2026-09-05, v2.0.0)
 
