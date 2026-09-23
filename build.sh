@@ -133,7 +133,7 @@ cp "$STAGE/cover.png" "$STAGE/picori/cover.png"
 
 for f in "Legend of Zelda - The Minish Cap.sh" picori/tmc_pc.aarch64 picori/libs.aarch64/libSDL3.so.0 \
          picori/config.default.json picori/picori.ini port.json gameinfo.xml README.md screenshot.png cover.png \
-         picori/licenses/LICENSE-picori-GPL-3.0.txt picori/licenses/LICENSE-SDL3-zlib.txt; do
+         picori/licenses/LICENSE.picori.txt picori/licenses/LICENSE.sdl3.txt; do
   [ -e "$STAGE/$f" ] || { echo "!! missing: $f" >&2; exit 1; }
 done
 

@@ -145,6 +145,7 @@
     "upscale_method": "nearest",
     "vsync": true,
     "vsync_lock_ticks": false,
+    "view_zoom": -1,
     "widescreen_enabled": true,
     "window_scale": 1,
     "present_thread": false

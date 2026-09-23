@@ -71,29 +71,21 @@ actions are keyboard-only.
 
 Non-standard launcher lines, and why:
 
-- `log.prev.txt`: the previous run's log is kept, so a tester who relaunches
-  after a crash can still send it.
 - The ROM block: a `.gba` under any other name is matched against the
   decomp's SHA-1s for the USA, EU and JP ROMs and renamed to the file the
-  port reads; a zipped ROM or an unknown `.gba` gets its own message instead
-  of the generic one. Nothing is renamed without a hash match.
+  port reads. Nothing is renamed without a hash match.
 - `TMC_AUTOPLAY=1`: the port shows a desktop ROM/language picker before the
-  game; on a handheld that is an extra Start press every boot. The ROM is
-  found from the fixed file names instead.
-- `config.default.json` is copied to `config.json` only when there is none.
-  PortMaster overwrites every file in the zip on an update, so shipping
-  `config.json` itself reset the player's settings each time. A config from
-  before v2.3.0 gets `select_state_chords` added once, if it has no value
-  for it; a value the player set is left alone.
-- The three `DISPLAY_WIDTH`/`DISPLAY_HEIGHT` blocks. The port creates its
-  window at 240x160 times `window_scale` and only then asks for fullscreen,
-  and it sizes its settings menu text from that pre-fullscreen window once.
-  Testers on a 1280x720 Knulli and an R36S got a postage-stamp window and an
-  unreadable menu until they hand-edited the scale. So, on first launch only,
-  the launcher seeds `aspect_mode` (integer scaling on non-4:3 panels) and
-  `window_scale` (largest whole multiple of 240x160 that fits) in config.json,
-  and on every launch exports `TMC_UI_SCALE` from the panel size. Each seed
-  only rewrites the shipped default, so a value chosen in the menu stands.
+  game; on a handheld that is an extra Start press every boot.
+- `config.default.json` is copied to `config.json` only when there is none
+  (or it is empty). PortMaster overwrites every file in the zip on an update,
+  so shipping `config.json` itself reset the player's settings each time.
+  On that first copy the launcher sets `window_scale` (largest whole multiple
+  of 240x160 that fits `DISPLAY_WIDTH`x`DISPLAY_HEIGHT`) and, on non-4:3
+  panels, `aspect_mode` pixel_perfect: the port opens its window at
+  240x160 x `window_scale` before going fullscreen, and a 1280x720 Knulli
+  and an R36S got a postage-stamp window at scale 1.
+- `TMC_UI_SCALE` from the panel size: the port otherwise sizes its settings
+  menu text from the pre-fullscreen window, unreadable at 1280x720.
 - `SDL3SHIM_SDL2_VIDEODRIVER` / `SDL3SHIM_SDL2_AUDIODRIVER`: the shim's own way
   of passing the CFW's SDL2 driver choice through, copied from the
   Insaniquarium launcher.
