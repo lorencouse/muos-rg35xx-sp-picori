@@ -25,6 +25,10 @@ Thanks to [999sian](https://github.com/999sian/tmc) and the Project Picori contr
 
 The settings menu opens on whichever button your firmware reports as the controller's Guide button: Menu on muOS and Knulli, R3 on the R36S under AmberELEC. It is a handheld menu, one group of settings at a time: D-pad moves, A opens or toggles a row, B backs out and closes it from the top level, L1 and R1 step through the groups. The footer lists the buttons. The launcher sizes its text from the panel, so nothing in it needs a mouse or a restart.
 
+## Screen
+
+The Menu button's Display group has two rows for the picture. View picks how much of the world shows: Original is the GBA's 240x160; Zoomed out shows more in every direction at a whole number of screen pixels per game pixel (320x240 at 2x on a 640x480 panel, 320x180 at 4x on 1280x720), and on bigger panels offers each size that fits, where a smaller number shows more world with smaller graphics; Wide, on a screen wider than 3:2, adds world at the sides only. Small rooms, cutscenes and menus stay at 240x160 whatever the setting. Screen fit picks how that picture meets the panel: Stretch to fill (the default on 4:3 panels), Original shape with bars, or Pixel perfect at the largest whole-number scale. The launcher starts on Zoomed out at the biggest pixels the panel allows.
+
 ## Save states
 
 Save states are separate from the in-game save. L2 takes one at any time and rolls through twenty slots, so a run leaves a history instead of one overwritten state. The game also autosaves to a three-slot ring every minute.
