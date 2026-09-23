@@ -58,6 +58,9 @@ export LD_LIBRARY_PATH="$GAMEDIR/libs.${DEVICE_ARCH}:$LD_LIBRARY_PATH"
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 export TMC_AUTOPLAY=1
 
+DISPLAY_WIDTH=${DISPLAY_WIDTH:-640}
+DISPLAY_HEIGHT=${DISPLAY_HEIGHT:-480}
+
 # config.json is not in the zip, so an update keeps the player's settings.
 # First launch: whole-number window scale for the panel, and pixel perfect on non-4:3 panels.
 if [ ! -s "$GAMEDIR/config.json" ]; then
@@ -74,7 +77,7 @@ fi
 ui=$(( DISPLAY_WIDTH * 10 / 640 < DISPLAY_HEIGHT * 10 / 480 ? DISPLAY_WIDTH * 10 / 640 : DISPLAY_HEIGHT * 10 / 480 ))
 [ "$ui" -lt 5 ] && ui=5
 [ "$ui" -gt 20 ] && ui=20
-export TMC_UI_SCALE="$(( ui / 10 )).$(( ui % 10 ))"
+export TMC_UI_SCALE="${TMC_UI_SCALE:-$(( ui / 10 )).$(( ui % 10 ))}"
 
 GAME_SDL_VIDEODRIVER=""
 if [ -n "$SDL_VIDEODRIVER" ]; then

@@ -8,7 +8,7 @@
     "analog_deadzone": 0.3,
     "aspect_mode": "stretch",
     "autosave_enabled": true,
-    "autosave_interval_ms": 60000,
+    "autosave_interval_ms": 300000,
     "bg_fill": "black",
     "bg_fill_color": [
         0,
