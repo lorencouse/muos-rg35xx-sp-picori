@@ -17,6 +17,35 @@
   session on the SP for audio and autosave hitching, the three tester replies,
   the Cebion reply, opening the PR.
 
+## Soft slots back on X/Y, upstream merge (2026-09-23)
+
+Discord 2026-09-19..23: joshuarcastillo (rando works on v2.2.0; "random non functional doors
+all over the place", harmless), NoseDevilEugen (README's "Nothing in the game assigns an item
+to them on a handheld" is wrong; he wrote the upstream pause-menu soft-slot equip, PR #183;
+suggested rebasing on current Picori).
+
+- The README claim was wrong twice over: the fork already had Select+A/B in the pause menu
+  (REBORN_FEAT_SELECT_HOLD_EQUIP, default on) to fill soft slots 0/1 and L+A/B
+  (REBORN_FEAT_SECONDARY_LAB) to fire them, plus the "Extra equip slots" settings page.
+- [x] Fork branch `sp9-upstream-merge` (worktree `../picori-sp9`): upstream master merged
+      (59 commits, v0.9.0..v0.9.3 and later). Conflicts in 8 files; quicksave keeps ours
+      (full-global regions + engine resume, already a superset of upstream's v7 relocation),
+      mixdown keeps ours on upstream's shutdown-safe scratch plus a NaN guard. RA (new, default
+      on, needs libcurl) is compiled out when `TMC_SDL3_SHARED=1`.
+- [x] Select chords (fork, `select_state_chords`, default off; package turns it on): in gameplay
+      Select+X / Select+Y open the picker's save / load page and X/Y are soft slots again.
+      Select is held back from the game in gameplay (a tap is replayed on release, a hold
+      passes after 18 frames) because holding Select is Ezlo's hint (CanDispEzloMessage).
+      The gptokeyb2 `hk_hotkey` layer was not used: it never fired on the device (see below).
+- [ ] device test of the sp9 build: chord opens both pages, bare X/Y fire the assigned items,
+      Select tap still gets Ezlo, pause-menu Select+A/B assigns, old state files load
+- [ ] doors: none of the known door fixes explain it (#28/#29/#30/#128 and the Type3 guard were
+      already in sp8). Ask joshuarcastillo for a screenshot, the area, ROM region and whether
+      entrance shuffle is on.
+- [ ] push the branch, tag `v0.8.3-sp9` (or re-base the tag name on 0.9.x), bump build.sh, cut
+      package v2.3.0
+- [ ] reply to NoseDevilEugen and joshuarcastillo
+
 ## Before the PortMaster PR
 
 - [x] Fork: `portmaster-shared-sdl3` merged into `rg35xx-sp-audio-ui`, release `v0.8.3-sp5` published

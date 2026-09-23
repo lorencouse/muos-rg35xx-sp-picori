@@ -11,14 +11,15 @@ Thanks to [999sian](https://github.com/999sian/tmc) and the Project Picori contr
 | D-pad / left stick | Move |
 | A | Sword / confirm |
 | B | Item / cancel |
-| X | Save-state picker, ready to save |
-| Y | Save-state picker, ready to load |
+| X / Y | Extra item buttons (see below) |
+| Select + X | Save-state picker, ready to save |
+| Select + Y | Save-state picker, ready to load |
 | L1 | GBA L |
 | R1 | GBA R |
 | L2 | Save a state to a new slot |
 | R2 (hold) | Fast-forward |
 | Start | Pause menu |
-| Select | Select |
+| Select | Select (Ezlo's hint) |
 | Menu (Guide) | Port settings |
 | Start + Select | Quit |
 
@@ -28,9 +29,13 @@ The settings menu opens on whichever button your firmware reports as the control
 
 Save states are separate from the in-game save. L2 takes one at any time and rolls through twenty slots, so a run leaves a history instead of one overwritten state. The game also autosaves to a three-slot ring every minute.
 
-X and Y open the picker, a full-screen page with one slot's screenshot, when it was written, and a filmstrip of the neighbouring slots. X opens it ready to save, Y ready to load, and A does whichever the page is on. Left and right move one slot, up and down (or L1 and R1) jump five, B closes. Pressing the other of X and Y switches the page instead of acting, so arriving through the wrong door costs one press and never a run.
+Select + X and Select + Y open the picker, a full-screen page with one slot's screenshot, when it was written, and a filmstrip of the neighbouring slots. Select + X opens it ready to save, Select + Y ready to load, and A does whichever the page is on. Left and right move one slot, up and down (or L1 and R1) jump five, B closes. Pressing X or Y inside the picker switches the page instead of acting, so arriving through the wrong door costs one press and never a run.
 
-X and Y are the port's two extra equip slots on a keyboard (C and V). Nothing in the game assigns an item to them on a handheld, so this package uses them for the picker.
+In gameplay the game only sees Select once it is clear you are not reaching for X or Y: a tap reaches it when you let go, a hold after a third of a second. Ezlo's hint still comes up either way.
+
+## Extra item buttons
+
+X and Y each hold a third and fourth item alongside A and B. To fill one, open the pause menu's item screen, hold Select, and press A on an item for X or B for Y. Once a button holds an item, pressing X or Y on another item in the pause menu swaps it. L + A and L + B also use the X and Y items. The Menu button's settings have the same slots under "Extra equip slots". The choices are kept in `ports/picori/`, not in the save file, and a button only fires an item the current save owns.
 
 ## Saves
 
