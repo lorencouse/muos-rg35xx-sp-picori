@@ -37,8 +37,19 @@ suggested rebasing on current Picori).
       Select is held back from the game in gameplay (a tap is replayed on release, a hold
       passes after 18 frames) because holding Select is Ezlo's hint (CanDispEzloMessage).
       The gptokeyb2 `hk_hotkey` layer was not used: it never fired on the device (see below).
-- [ ] device test of the sp9 build: chord opens both pages, bare X/Y fire the assigned items,
-      Select tap still gets Ezlo, pause-menu Select+A/B assigns, old state files load
+- [~] device test of the sp9 build (2026-09-23, local build, launched from the muOS menu):
+      Select+Y opens the load page. Select+X froze the game: the fork's raw-pad practice combos
+      (Select+X = practice pause, Select+Y = frame step, Select+A/B = load/set practice point)
+      read the pad alongside gptokeyb2's keys. Fixed in 3b49d8d13 (off under
+      `select_state_chords`), installed as md5 ea032fe6, not yet re-tested. Still open: bare X/Y
+      fire assigned items, Select tap still gets Ezlo (one injected tap and one 0.8 s hold showed
+      no Ezlo; baseline on sp8 at the same spot not taken), pause-menu Select+A/B assigns.
+      Old state files do not load: quicksave format is now v8.
+- [x] fast-forward was flat out (526 TPS in the Minish Woods on sp8, ~8.8x); user asked for 25%
+      less. Fork `fast_forward_speed` (multiple of normal, 0 = uncapped); package sets 6.5.
+- Device lesson: launching from adb with muxfrontend SIGSTOPped, then unmuting sinks with
+  `wpctl`, gave a loud hiss the volume keys could not touch. Launch from the menu and only inject
+  input over adb (notes/custom-scripts.md in the notes repo).
 - [ ] doors: none of the known door fixes explain it (#28/#29/#30/#128 and the Type3 guard were
       already in sp8). Ask joshuarcastillo for a screenshot, the area, ROM region and whether
       entrance shuffle is on.
