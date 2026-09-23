@@ -19,9 +19,14 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
 TMC_REPO="lorencouse/tmc"
-TMC_TAG="${TMC_TAG:-v0.8.3-sp8}"
+TMC_TAG_PINNED="v0.8.3-sp8"
+TMC_SHA256_PINNED="b576ff723e224f87f928414c3197365364830a4d44914eba734a598fc3490877"
+TMC_TAG="${TMC_TAG:-$TMC_TAG_PINNED}"
 TMC_ASSET="tmc-multi-linux-arm64-${TMC_TAG}.tar.gz"
-TMC_SHA256="${TMC_SHA256:-b576ff723e224f87f928414c3197365364830a4d44914eba734a598fc3490877}"
+# The pinned hash belongs to the pinned tag; another tag is checked only if
+# TMC_SHA256 is given with it.
+if [ "$TMC_TAG" = "$TMC_TAG_PINNED" ]; then TMC_SHA256="${TMC_SHA256:-$TMC_SHA256_PINNED}"
+else TMC_SHA256="${TMC_SHA256:-}"; fi
 
 SHIM_REPO="lorencouse/muos-rg35xx-sp-picori"
 SHIM_TAG="${SDL3SHIM_TAG:-latest}"       # every release of this repo carries the shim
@@ -55,7 +60,19 @@ if [ -z "${TMC_BINARY:-}" ] && [ -n "$TMC_SHA256" ] && [ "$got" != "$TMC_SHA256"
   echo "!! tmc_pc SHA-256 mismatch: expected $TMC_SHA256, got $got" >&2
   exit 1
 fi
+[ -n "${TMC_BINARY:-}" ] || [ -n "$TMC_SHA256" ] || echo "!! tmc_pc $TMC_TAG is not pinned; set TMC_SHA256 to check it" >&2
 echo "==> tmc_pc $got"
+
+# Every "key" in the shipped config must be one this binary knows, or the
+# package promises controls the game ignores (select_state_chords on sp8).
+missing=""
+for key in $(sed -n 's/^    "\([a-z0-9_]*\)":.*/\1/p' "$HERE/port/picori/config.default.json"); do
+  grep -qa "$key" "$STAGE/tmc_pc" || missing="$missing $key"
+done
+if [ -n "$missing" ]; then
+  echo "!! config.default.json has keys tmc_pc does not know:$missing" >&2
+  exit 1
+fi
 
 # SDL3 shim
 if [ -n "${SDL3SHIM_LIB:-}" ]; then
@@ -83,7 +100,7 @@ cp "$STAGE/cover.png" "$STAGE/picori/cover.png"
 find "$STAGE" -iname '*.gba' -delete
 
 for f in "Legend of Zelda - The Minish Cap.sh" picori/tmc_pc.aarch64 picori/libs.aarch64/libSDL3.so.0 \
-         picori/config.json picori/picori.ini port.json gameinfo.xml README.md screenshot.png cover.png \
+         picori/config.default.json picori/picori.ini port.json gameinfo.xml README.md screenshot.png cover.png \
          picori/licenses/LICENSE-picori-GPL-3.0.txt picori/licenses/LICENSE-SDL3-zlib.txt; do
   [ -e "$STAGE/$f" ] || { echo "!! missing: $f" >&2; exit 1; }
 done
@@ -92,5 +109,5 @@ mkdir -p "$DIST/$VERSION"
 out="$DIST/$VERSION/picori.zip"
 rm -f "$out"
 rm -f "$STAGE/testing_thread.txt"
-( cd "$STAGE" && zip -q -r -X "$out" . -x '.DS_Store' -x '__MACOSX/*' )
+( cd "$STAGE" && zip -q -r -X "$out" . -x '*.DS_Store' -x '*__MACOSX/*' )
 echo "==> $out ($(du -h "$out" | cut -f1), sha256 $(sha256_of "$out"))"

@@ -42,6 +42,20 @@ export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 # Skip the port's desktop ROM/language picker; the ROM is found from the paths above.
 export TMC_AUTOPLAY=1
 
+# The zip ships config.default.json, not config.json, so a PortMaster update
+# (which overwrites every file in the zip) keeps the player's settings. A fresh
+# config.json also clears the first-launch markers so the seeds below re-run.
+if [ ! -f "$GAMEDIR/config.json" ]; then
+  cp "$GAMEDIR/config.default.json" "$GAMEDIR/config.json"
+  rm -f "$GAMEDIR/conf/.aspect" "$GAMEDIR/conf/.scale"
+fi
+
+# Configs from before v2.3.0 lack the Select+X/Y picker chords; add the key
+# once. A value the player set, true or false, is left alone.
+if ! grep -q '"select_state_chords"' "$GAMEDIR/config.json"; then
+  sed -i '1s/^{/{"select_state_chords": true,/' "$GAMEDIR/config.json"
+fi
+
 PANEL_WIDTH=${DISPLAY_WIDTH:-640}
 PANEL_HEIGHT=${DISPLAY_HEIGHT:-480}
 

@@ -20,6 +20,11 @@ on:
         required: false
         default: ""
         type: string
+      tmc_sha256:
+        description: "SHA-256 of that tmc_pc (empty = unchecked unless tmc_tag is the pinned one)"
+        required: false
+        default: ""
+        type: string
       shim_only:
         description: "Build and upload the shim artifact only, no zip or release"
         required: false
@@ -98,11 +103,12 @@ jobs:
       - name: Build zip
         env:
           TMC_TAG: ${{ inputs.tmc_tag }}
+          TMC_SHA256: ${{ inputs.tmc_sha256 }}
         run: |
           set -eux
           TAG="${{ inputs.tag || github.ref_name }}"
           # Empty TMC_TAG lets build.sh use its pinned default (tag + sha).
-          [ -n "$TMC_TAG" ] || TMC_TAG="$(sed -n 's/^TMC_TAG="\${TMC_TAG:-\(.*\)}"$/\1/p' build.sh)"
+          [ -n "$TMC_TAG" ] || TMC_TAG="$(sed -n 's/^TMC_TAG_PINNED="\(.*\)"$/\1/p' build.sh)"
           SDL3SHIM_LIB=shim/libSDL3.so.0 ./build.sh "${TAG#v}"
           cp "dist/${TAG#v}/picori.zip" picori.zip
           cp shim/libSDL3.so.0 libSDL3.so.0

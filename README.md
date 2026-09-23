@@ -13,7 +13,7 @@ port/                                   the package, as PortMaster wants it
   Legend of Zelda - The Minish Cap.sh   launcher
   port.json  gameinfo.xml  README.md  screenshot.png  cover.png
   picori/
-    config.json                         shipped settings (keyboard bindings only)
+    config.default.json                 shipped settings, copied to config.json on first launch
     picori.ini                          gptokeyb2 keyboard map
     licenses/
     tmc_pc.aarch64                      added by build.sh, not in git
@@ -36,7 +36,7 @@ Open Chaos ports do. That needs a `tmc_pc` linked against a *shared* SDL3,
 which the fork builds when `TMC_SDL3_SHARED=1` (linux-arm64 leg of its CI).
 
 Input goes through gptokeyb2 as a keyboard: the port's save-state and
-fast-forward actions are keyboard-only, and `config.json` ships without its
+fast-forward actions are keyboard-only, and the shipped config has none of its
 gamepad bindings so a button is not seen twice.
 
 ## Build

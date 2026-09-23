@@ -74,6 +74,11 @@ Non-standard launcher lines, and why:
 - `TMC_AUTOPLAY=1`: the port shows a desktop ROM/language picker before the
   game; on a handheld that is an extra Start press every boot. The ROM is
   found from the fixed file names instead.
+- `config.default.json` is copied to `config.json` only when there is none.
+  PortMaster overwrites every file in the zip on an update, so shipping
+  `config.json` itself reset the player's settings each time. A config from
+  before v2.3.0 gets `select_state_chords` added once, if it has no value
+  for it; a value the player set is left alone.
 - The three `DISPLAY_WIDTH`/`DISPLAY_HEIGHT` blocks. The port creates its
   window at 240x160 times `window_scale` and only then asks for fullscreen,
   and it sizes its settings menu text from that pre-fullscreen window once.
