@@ -55,10 +55,22 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends git ca-certificates build-essential cmake ninja-build pkg-config
       - name: Sources
+        env:
+          # Pinned so a release ships the shim that was tested, not whatever
+          # the branch heads are that day. SDL is sdl2-backend as of v2.2.0;
+          # SPIRV-Cross is main on the day v2.2.0 was built.
+          SDL_COMMIT: 6057d79baf8321bf190479a699655f06cc2a962f
+          SPIRV_CROSS_COMMIT: 00ae9b44c9c16561bdff2e094c518a89f756944b
         run: |
           set -eux
-          git clone --depth 1 --recursive -b sdl2-backend https://github.com/bmdhacks/SDL.git sdl
-          git clone --depth 1 https://github.com/KhronosGroup/SPIRV-Cross.git spirv-cross
+          fetch() {  # fetch <url> <dir> <commit>
+            git init -q "$2"
+            git -C "$2" fetch -q --depth 1 "$1" "$3"
+            git -C "$2" checkout -q FETCH_HEAD
+          }
+          fetch https://github.com/bmdhacks/SDL.git sdl "$SDL_COMMIT"
+          git -C sdl submodule update --init --recursive --depth 1
+          fetch https://github.com/KhronosGroup/SPIRV-Cross.git spirv-cross "$SPIRV_CROSS_COMMIT"
           git -C sdl rev-parse HEAD > shim-commit.txt
       - name: Build
         run: |
@@ -104,9 +116,9 @@ jobs:
         env:
           TMC_TAG: ${{ inputs.tmc_tag }}
           TMC_SHA256: ${{ inputs.tmc_sha256 }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           set -eux
-          TAG="${{ inputs.tag || github.ref_name }}"
           # Empty TMC_TAG lets build.sh use its pinned default (tag + sha).
           [ -n "$TMC_TAG" ] || TMC_TAG="$(sed -n 's/^TMC_TAG_PINNED="\(.*\)"$/\1/p' build.sh)"
           SDL3SHIM_LIB=shim/libSDL3.so.0 ./build.sh "${TAG#v}"
