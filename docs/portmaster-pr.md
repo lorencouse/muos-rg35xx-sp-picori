@@ -71,6 +71,12 @@ actions are keyboard-only.
 
 Non-standard launcher lines, and why:
 
+- `log.prev.txt`: the previous run's log is kept, so a tester who relaunches
+  after a crash can still send it.
+- The ROM block: a `.gba` under any other name is matched against the
+  decomp's SHA-1s for the USA, EU and JP ROMs and renamed to the file the
+  port reads; a zipped ROM or an unknown `.gba` gets its own message instead
+  of the generic one. Nothing is renamed without a hash match.
 - `TMC_AUTOPLAY=1`: the port shows a desktop ROM/language picker before the
   game; on a handheld that is an extra Start press every boot. The ROM is
   found from the fixed file names instead.

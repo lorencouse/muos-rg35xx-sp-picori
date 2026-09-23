@@ -2,7 +2,7 @@
 
 Thanks to [999sian](https://github.com/999sian/tmc) and the Project Picori contributors for the native PC port of *The Legend of Zelda: The Minish Cap*, to the [zeldaret](https://github.com/zeldaret/tmc) team for the decompilation it is built on, and to [bmdhacks](https://github.com/bmdhacks/SDL/tree/sdl2-backend) for the SDL3-to-SDL2 shim that lets an SDL3 program run on these handhelds.
 
-**This port does not include the game.** Copy your ROM into `ports/picori/` as `baserom.gba` (USA), `baserom_eu.gba` (Europe) or `baserom_jp.gba` (Japan). The first launch extracts the game assets from the ROM into `ports/picori/assets/`; later launches skip that.
+**This port does not include the game.** Copy your ROM into `ports/picori/`, unzipped. The launcher recognises a clean USA, Europe or Japan ROM under any file name and renames it to `baserom.gba`, `baserom_eu.gba` or `baserom_jp.gba`; you can also name it that way yourself. The first launch extracts the game assets from the ROM into `ports/picori/assets/`; later launches skip that. Let the first launch finish: quitting while the screen is still black interrupts the extraction.
 
 ## Controls
 
@@ -21,7 +21,7 @@ Thanks to [999sian](https://github.com/999sian/tmc) and the Project Picori contr
 | Start | Pause menu |
 | Select | Select (Ezlo's hint) |
 | Menu (Guide) | Port settings |
-| Start + Select | Quit |
+| Start + Select | Quit (does not save; see below) |
 
 The settings menu opens on whichever button your firmware reports as the controller's Guide button: Menu on muOS and Knulli, R3 on the R36S under AmberELEC. It is a handheld menu, one group of settings at a time: D-pad moves, A opens or toggles a row, B backs out and closes it from the top level, L1 and R1 step through the groups. The footer lists the buttons. The launcher sizes its text from the panel, so nothing in it needs a mouse or a restart.
 
@@ -39,7 +39,9 @@ X and Y each hold a third and fourth item alongside A and B. To fill one, open t
 
 ## Saves
 
-The in-game save (`tmc.sav`), the save states (`state_*.bin`), the config and the extracted assets all live in `ports/picori/`. Deleting the port folder removes them; copying the folder to another card keeps them.
+Start + Select closes the game at once, without saving. Save in the game or take a state with L2 first; the autosave ring holds at most the last minute.
+
+The in-game save (`tmc.sav`), the save states (`state_*.bin`), the config and the extracted assets all live in `ports/picori/`. Updating the port through PortMaster keeps your settings. Deleting the port folder removes them; copying the folder to another card keeps them.
 
 ## Known issues
 
@@ -69,21 +71,24 @@ The binary is `build/pc/tmc_pc`, shipped as `picori/tmc_pc.aarch64`.
 ### SDL3-on-SDL2 shim
 
 ```shell
-git clone --recursive -b sdl2-backend https://github.com/bmdhacks/SDL.git
+git clone -b sdl2-backend https://github.com/bmdhacks/SDL.git
+git -C SDL checkout 6057d79baf8321bf190479a699655f06cc2a962f
 git clone https://github.com/KhronosGroup/SPIRV-Cross.git
+git -C SPIRV-Cross checkout 00ae9b44c9c16561bdff2e094c518a89f756944b
 cd SDL && mkdir build && cd build
 cmake .. \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_FLAGS="-march=armv8-a" \
   -DSDL_SDL2_BACKEND=ON \
-  -DSDL_SPIRV_CROSS_DIR=../../SPIRV-Cross \
+  -DSDL_SPIRV_CROSS_DIR="$(cd ../../SPIRV-Cross && pwd)" \
   -DSDL_X11=OFF -DSDL_WAYLAND=OFF -DSDL_KMSDRM=OFF \
   -DSDL_PIPEWIRE=OFF -DSDL_PULSEAUDIO=OFF -DSDL_ALSA=OFF \
   -DSDL_SNDIO=OFF -DSDL_OSS=OFF -DSDL_JACK=OFF \
   -DSDL_OFFSCREEN=OFF -DSDL_DUMMYVIDEO=OFF \
   -DSDL_DUMMYAUDIO=OFF -DSDL_DISKAUDIO=OFF \
   -DSDL_VULKAN=OFF -DSDL_GPU=ON -DSDL_RENDER_GPU=ON \
-  -DSDL_UNIX_CONSOLE_BUILD=ON
+  -DSDL_UNIX_CONSOLE_BUILD=ON \
+  -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF
 make -j$(nproc)
 ```
 

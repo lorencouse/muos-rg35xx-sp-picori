@@ -21,16 +21,45 @@ BINARY="tmc_pc.${DEVICE_ARCH}"
 
 cd "$GAMEDIR"
 
+# Keep the previous run's log: a tester who relaunches after a crash still has it.
+[ -f "$GAMEDIR/log.txt" ] && mv -f "$GAMEDIR/log.txt" "$GAMEDIR/log.prev.txt"
 > "$GAMEDIR/log.txt" && exec > >(tee "$GAMEDIR/log.txt") 2>&1
 
-if [ ! -f "$GAMEDIR/baserom.gba" ] && [ ! -f "$GAMEDIR/baserom_eu.gba" ] && [ ! -f "$GAMEDIR/baserom_jp.gba" ]; then
-  pm_message "Copy your Minish Cap ROM to ports/picori as baserom.gba (USA), baserom_eu.gba or baserom_jp.gba."
+have_rom() {
+  [ -f "$GAMEDIR/baserom.gba" ] || [ -f "$GAMEDIR/baserom_eu.gba" ] || [ -f "$GAMEDIR/baserom_jp.gba" ]
+}
+
+# A ROM under any other name (the No-Intro one, say) is recognised by the
+# decomp's SHA-1s and renamed to the file the game looks for.
+if ! have_rom && command -v sha1sum >/dev/null 2>&1; then
+  for rom in "$GAMEDIR"/*.[gG][bB][aA]; do
+    [ -f "$rom" ] || continue
+    case "$(sha1sum "$rom" | cut -d' ' -f1)" in
+      b4bd50e4131b027c334547b4524e2dbbd4227130) name=baserom.gba ;;
+      cff199b36ff173fb6faf152653d1bccf87c26fb7) name=baserom_eu.gba ;;
+      6c5404a1effb17f481f352181d0f1c61a2765c5d) name=baserom_jp.gba ;;
+      *) echo "Not a Minish Cap ROM the port knows: ${rom##*/}"; continue ;;
+    esac
+    [ -f "$GAMEDIR/$name" ] || { echo "Renaming ${rom##*/} to $name"; mv "$rom" "$GAMEDIR/$name"; }
+  done
+fi
+
+if ! have_rom; then
+  if ls "$GAMEDIR"/*.[zZ][iI][pP] >/dev/null 2>&1 || ls "$GAMEDIR"/*.7[zZ] >/dev/null 2>&1; then
+    pm_message "Unzip your Minish Cap ROM first: ports/picori needs the .gba file itself."
+  elif ! command -v sha1sum >/dev/null 2>&1; then
+    pm_message "Rename your Minish Cap ROM in ports/picori to baserom.gba (USA), baserom_eu.gba or baserom_jp.gba."
+  elif ls "$GAMEDIR"/*.[gG][bB][aA] >/dev/null 2>&1; then
+    pm_message "The .gba in ports/picori is not a clean Minish Cap ROM (USA, Europe or Japan). Hacked or patched ROMs are not supported."
+  else
+    pm_message "Copy your Minish Cap ROM (.gba, USA, Europe or Japan) into ports/picori. Any file name works."
+  fi
   sleep 5
   exit 1
 fi
 
 if [ ! -d "$GAMEDIR/assets" ]; then
-  pm_message "First launch: extracting game assets from the ROM. This takes a moment."
+  pm_message "First launch: extracting game assets from the ROM. The screen stays black for up to a minute. Do not quit until the title appears."
 fi
 
 $ESUDO chmod +x "$GAMEDIR/$BINARY"

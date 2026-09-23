@@ -8,23 +8,24 @@ Title: The Legend of Zelda: The Minish Cap (Project Picori)
 URL: https://github.com/lorencouse/tmc/tree/rg35xx-sp-audio-ui
 
 Instructions:
-Not ready to run. Copy your Minish Cap ROM to ports/picori as baserom.gba (USA), baserom_eu.gba or baserom_jp.gba. The first launch extracts assets from the ROM.
+Not ready to run. Copy your Minish Cap ROM (unzipped .gba, USA, Europe or Japan) into ports/picori; any file name works. The first launch extracts assets from the ROM, so let it reach the title screen.
 
 | Button | Action |
 |--|--|
 | D-pad | Move |
 | A | Sword / confirm |
 | B | Item / cancel |
-| X | Save-state picker, ready to save |
-| Y | Save-state picker, ready to load |
+| X / Y | Extra item buttons (fill them in the pause menu: hold Select, then A or B on an item) |
+| Select + X | Save-state picker, ready to save |
+| Select + Y | Save-state picker, ready to load |
 | L1 | GBA L |
 | R1 | GBA R |
 | L2 | Save a state to a new slot |
 | R2 (hold) | Fast-forward |
 | Start | Pause menu |
-| Select | Select |
+| Select | Select (Ezlo's hint) |
 | Menu | Port settings |
-| Start + Select | Quit |
+| Start + Select | Quit (does not save) |
 
 CFW Tests:
 [ ] ArkOS
