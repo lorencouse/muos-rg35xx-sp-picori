@@ -76,13 +76,20 @@ export TMC_AUTOPLAY=1
 # config.json also clears the first-launch markers so the seeds below re-run.
 if [ ! -f "$GAMEDIR/config.json" ]; then
   cp "$GAMEDIR/config.default.json" "$GAMEDIR/config.json"
-  rm -f "$GAMEDIR/conf/.aspect" "$GAMEDIR/conf/.scale"
+  rm -f "$GAMEDIR/conf/.aspect" "$GAMEDIR/conf/.scale" "$GAMEDIR/conf/.zoom"
 fi
 
 # Configs from before v2.3.0 lack the Select+X/Y picker chords; add the key
 # once. A value the player set, true or false, is left alone.
 if ! grep -q '"select_state_chords"' "$GAMEDIR/config.json"; then
   sed -i '1s/^{/{"select_state_chords": true,/' "$GAMEDIR/config.json"
+fi
+
+# Configs from before v2.3.0 have widescreen off, which the zoomed-out view
+# below needs; switch it on once. Turning it off in the settings menu stands.
+if [ ! -f "$GAMEDIR/conf/.zoom" ]; then
+  sed -i 's/"widescreen_enabled": false/"widescreen_enabled": true/' "$GAMEDIR/config.json"
+  touch "$GAMEDIR/conf/.zoom"
 fi
 
 PANEL_WIDTH=${DISPLAY_WIDTH:-640}
@@ -124,6 +131,24 @@ ui_tenths_v=$(( PANEL_HEIGHT * 10 / 480 ))
 [ "$ui_tenths" -lt 5 ] && ui_tenths=5
 [ "$ui_tenths" -gt 20 ] && ui_tenths=20
 export TMC_UI_SCALE="${TMC_UI_SCALE:-$(( ui_tenths / 10 )).$(( ui_tenths % 10 ))}"
+
+# Zoomed-out view: at the largest whole multiple that still shows 240x160, a
+# panel that divides exactly shows more world than the GBA did (640x480 ->
+# 320x240 at 2x, 1280x720 -> 320x180 at 4x). The game uses that size in rooms
+# big enough to fill it and the GBA's 240x160 everywhere else, so the picture
+# always fills the panel. Other panels (720x720 -> 240x240) keep 240x160.
+zoom=$(( PANEL_WIDTH / 240 ))
+zoom_v=$(( PANEL_HEIGHT / 160 ))
+[ "$zoom_v" -lt "$zoom" ] && zoom=$zoom_v
+if [ "$zoom" -ge 1 ]; then
+  view_w=$(( PANEL_WIDTH / zoom ))
+  view_h=$(( PANEL_HEIGHT / zoom ))
+  if [ $(( view_w * zoom )) -eq "$PANEL_WIDTH" ] && [ $(( view_h * zoom )) -eq "$PANEL_HEIGHT" ] &&
+     [ "$view_w" -gt 240 ] && [ "$view_w" -le 384 ] && [ "$view_h" -le 240 ]; then
+    export TMC_WS_VIEW_WIDTH="${TMC_WS_VIEW_WIDTH:-$view_w}"
+    [ "$view_h" -gt 160 ] && export TMC_WS_VIEW_HEIGHT="${TMC_WS_VIEW_HEIGHT:-$view_h}"
+  fi
+fi
 
 # SDL3 shim: pass the CFW's SDL2 driver choice through to the SDL2 underneath.
 GAME_SDL_VIDEODRIVER=""
