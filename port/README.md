@@ -41,6 +41,8 @@ In gameplay the game only sees Select once it is clear you are not reaching for 
 
 X and Y each hold a third and fourth item alongside A and B. To fill one, open the pause menu's item screen, hold Select, and press A on an item for X or B for Y. Once a button holds an item, pressing X or Y on another item in the pause menu swaps it. L + A and L + B also use the X and Y items. The Menu button's settings have the same slots under "Extra equip slots". The choices are kept in `ports/picori/`, not in the save file, and a button only fires an item the current save owns.
 
+L2 and R2 can hold a fifth and sixth item, giving six item buttons with A and B, but only if you give up their default jobs: saving a state and fast-forward. To make the swap, edit `ports/picori/picori.ini` and change `l2 = home` to `l2 = q` and `r2 = tab` to `r2 = e`. You can still take states with the Select + X picker. The pause-menu Select trick only fills X and Y, so fill L2 and R2 from "Extra equip slots" in the Menu button's settings. After that, pressing L2 or R2 on an item in the pause menu swaps it, the same as X and Y. A slot that has never held an item does nothing when pressed, so assign something to each button first, even a placeholder like the sword. Thanks to NoseDevilEugen for the tip.
+
 ## Saves
 
 Start + Select closes the game at once, without saving. Save in the game or take a state with L2 first; the autosave ring holds at most the last minute.
