@@ -4,8 +4,10 @@ Everything needed to open the PR against
 [PortsMaster/PortMaster-New](https://github.com/PortsMaster/PortMaster-New),
 kept here so the repo, not a chat log, holds it.
 
-Current zip: https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.2.0
-(tmc v0.8.3-sp8). Do not link v2.0.0, the black-screen build.
+Current zip: https://github.com/lorencouse/muos-rg35xx-sp-picori/releases/tag/v2.3.0
+(tmc v0.8.3-sp10). Do not link v2.0.0, the black-screen build. Save states
+from v2.2.0 and earlier do not load in v2.3.0 (quicksave format v8); in-game
+saves carry over.
 
 ## Steps
 

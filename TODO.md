@@ -17,6 +17,27 @@
   session on the SP for audio and autosave hitching, the three tester replies,
   the Cebion reply, opening the PR.
 
+## Release sp10 / v2.3.0 (2026-09-23)
+
+- Code review of the day's merges (fork a27b4f578^..dcc1099cf plus the package) found ten
+  issues; all fixed on fork branch `release-fixes`, fast-forwarded into fork `master` and
+  `rg35xx-sp-audio-ui`, tagged `v0.8.3-sp10`.
+  - save states written to a `.tmp` and renamed (fsync for manual saves only; autosaves run on
+    the game thread on every room change and skip it); config.json likewise, without fsync
+  - hidden classic page-stack menu took Start (Enter) / Select (Backspace) / L2 (Home) under the
+    console shell: two Starts ran "Unlock all items". Only the shown menu takes raw keys now.
+  - file-select sidebar left an ImGui nav key held after closing; sprites below a native
+    160-line frame wrapped to the top in the tall view (both sprite passes)
+  - tunic colour recoloured any row with a tunic ramp (Grey NPCs); now needs Link's other colours
+  - fast_forward_speed cap in the legacy coupled loop; TMC_WS_TRACE read once
+  - regression tests: stubs for the new hooks, persistence runner include paths; upstream's
+    quicksave_entities dropped (tests relocation the fork's quicksave does not do)
+  - CI: tracker repro used a MULTI_REGION-only symbol, breaking the single-region x86_64 build
+- Verified on the SP (user, 2026-09-23): Select+X/Y, X/Y items, Equipment assignment, sliders,
+  red tunic, zoomed-out view, no cheat on Start.
+- Package: autosave every 5 min (was 60 s), launcher DISPLAY_* fallbacks and a set
+  TMC_UI_SCALE kept, build.sh pinned to sp10.
+
 ## Soft slots back on X/Y, upstream merge (2026-09-23)
 
 Discord 2026-09-19..23: joshuarcastillo (rando works on v2.2.0; "random non functional doors
@@ -37,7 +58,7 @@ suggested rebasing on current Picori).
       Select is held back from the game in gameplay (a tap is replayed on release, a hold
       passes after 18 frames) because holding Select is Ezlo's hint (CanDispEzloMessage).
       The gptokeyb2 `hk_hotkey` layer was not used: it never fired on the device (see below).
-- [~] device test of the sp9 build (2026-09-23, local build, launched from the muOS menu):
+- [x] device test of the sp9 build (2026-09-23, local build, launched from the muOS menu):
       Select+Y opens the load page. Select+X froze the game: the fork's raw-pad practice combos
       (Select+X = practice pause, Select+Y = frame step, Select+A/B = load/set practice point)
       read the pad alongside gptokeyb2's keys. Fixed in 3b49d8d13 (off under
@@ -53,8 +74,8 @@ suggested rebasing on current Picori).
 - [ ] doors: none of the known door fixes explain it (#28/#29/#30/#128 and the Type3 guard were
       already in sp8). Ask joshuarcastillo for a screenshot, the area, ROM region and whether
       entrance shuffle is on.
-- [ ] push the branch, tag `v0.8.3-sp9` (or re-base the tag name on 0.9.x), bump build.sh, cut
-      package v2.3.0
+- [x] push the branch, tag, bump build.sh, cut package v2.3.0: see "Release sp10 / v2.3.0"
+      above. The sp9 tag's release build failed (linux arm64 xmake abort) and was never published.
 - [ ] reply to NoseDevilEugen and joshuarcastillo
 
 ## Native-port features (ideas, 2026-09-23)
