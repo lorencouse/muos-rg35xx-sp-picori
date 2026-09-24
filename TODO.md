@@ -59,12 +59,15 @@ suggested rebasing on current Picori).
 
 ## Native-port features (ideas, 2026-09-23)
 
+Open ones are filed as issues on the fork (issues enabled 2026-09-23, labelled `help wanted`)
+so other people can pick them up: https://github.com/lorencouse/tmc/issues
+
 Things an emulator cannot do, or that other handheld ports ship. All of it lives in the fork,
 so each one widens the diff against upstream; prefer the ones upstream would take. The SP renders
 in software, so anything drawn every frame has to be cheap.
 
-- [~] Check tracker: fork branch `check-tracker` (worktree `../picori-tracker`, off sp9 at
-      3b49d8d13; uncommitted). A Tracker group in the settings overlay (after Equipment; also a
+- [~] Check tracker: fork branch `check-tracker` (7ec519216, merged into master via
+      sp10-features). A Tracker group in the settings overlay (after Equipment; also a
       ribbon tab), for vanilla play and rando alike: the 228 randomizer locations with collected
       state read from save flags, and the 100 kinstone fusions (not fused / fused, reward waiting /
       done) from `gSave.kinstones`. Nothing is stored beside the save. The fork's existing
@@ -108,31 +111,34 @@ in software, so anything drawn every frame has to be cheap.
         random" for the 18 shared ones. All 91 non-gold fusions have a source.
   - [x] old rando "HUD Tracker" Locations tab now lists uncollected checks from port_tracker
         (it filtered on the stubbed reachability and was always empty)
-  - [ ] rando hooks that probably never fire (from the same source read, not tested in game):
+  - [ ] rando hooks that probably never fire (from the same source read, not tested in game): (https://github.com/lorencouse/tmc/issues/10)
         DHC B2 King (script.c keys MINISTER_POTHO + rupee, but King Daltus gives the key),
         Melari (every rando file presets OYAKATA_DEMO, skipping the reward branch), Simulation
         chest (a small chest in a room with no tile-entity list, so no key is built)
-  - [ ] the scripted-check rules have no flip test in `port_repro_tracker.c` yet (plain keys do)
-- [ ] Minimap / HUD in the letterbox bars once the zoom-out work (`../picori-zoom`) lands
-- [ ] Suspend on quit / lid close, resume on next launch (quicksave has an engine-resume path)
-- [ ] QoL toggles, default off: instant text outside rando (`rando_instant_text` already does it),
-      skip repeat "You got a red rupee!" boxes, shorter fusion / portal / shrink animations,
-      skippable cutscenes, faster Pegasus charge
-- [ ] Difficulty / cheat sliders on the Reborn flag system: damage multiplier, one-hit KO,
+  - [ ] the scripted-check rules have no flip test in `port_repro_tracker.c` yet (plain keys do) (https://github.com/lorencouse/tmc/issues/10)
+- [ ] Minimap / HUD in the letterbox bars once the zoom-out work (`../picori-zoom`) lands (https://github.com/lorencouse/tmc/issues/1)
+- [ ] Suspend on quit / lid close, resume on next launch (quicksave has an engine-resume path) (https://github.com/lorencouse/tmc/issues/2)
+- [~] QoL toggles, default off: instant text outside rando done (`instant_text`, fork f804b1a6f, (https://github.com/lorencouse/tmc/issues/3)
+      in master). Still open: skip repeat "You got a red rupee!" boxes, shorter fusion / portal /
+      shrink animations, skippable cutscenes, faster Pegasus charge
+- [ ] Difficulty / cheat sliders on the Reborn flag system: damage multiplier, one-hit KO, (https://github.com/lorencouse/tmc/issues/4)
       bigger wallet, infinite ammo, no fall damage
-- [ ] Photo mode: hotkey writes a PNG of the HUD-less frame
-- [ ] Tunic / heart colours outside rando (`rando_cosmetic.cpp` already has them)
-- [ ] Low-health beep: off / slower
-- [x] Separate music and SFX volume: fork branch `audio-volume-split` (worktree
-      `../picori-audio-volume-split`, uncommitted). `music_volume` / `sfx_volume` (default 1.0),
+- [ ] Photo mode: hotkey writes a PNG of the HUD-less frame (https://github.com/lorencouse/tmc/issues/5)
+- [x] Tunic / heart colours outside rando: `tunic_color` / `heart_color` (fork f804b1a6f, in master)
+- [x] Low-health beep: `low_health_beep` normal / slower / off (fork f804b1a6f, in master)
+- [x] Separate music and SFX volume: fork branch `audio-volume-split` (ee3db5fe5, in master). `music_volume` / `sfx_volume` (default 1.0),
       sliders under Master volume. Music = songs on the game's BGM player (index 31), the split
       the game itself uses; item-get fanfare and jingles count as SFX. Headless: 0.5 / 0.25 in
       config gave exactly 0.5 / 0.25 energy per category; runtime_config test extended and run.
-- [ ] Button remap page in the overlay (bindings are only editable in config.json / the ini)
-- [ ] Battery and clock in the overlay footer (sysfs)
-- [ ] Sleep/wake hardening: audio device back, no hiss (see the adb hiss note above)
-- [ ] Achievements: RA is compiled out for want of libcurl; dlopen it when present
-- [ ] A bundled example mod pack and a short how-to, to show the mods system off
+- [ ] Button remap page in the overlay (bindings are only editable in config.json / the ini) (https://github.com/lorencouse/tmc/issues/6)
+- [~] Battery and clock in the overlay footer: fork branch `overlay-status` (worktree
+      `../picori-overlay-status`, off master, uncommitted). Right end of the console shell's
+      legend line, "14:05   87%" ("+" while charging); first `/sys/class/power_supply/*` with
+      type Battery (axp2202-battery on the SP, checked over adb), re-read every 5 s; clock only
+      when there is no battery. Needs a look on the SP screen.
+- [ ] Sleep/wake hardening: audio device back, no hiss (see the adb hiss note above) (https://github.com/lorencouse/tmc/issues/7)
+- [ ] Achievements: RA is compiled out for want of libcurl; dlopen it when present (https://github.com/lorencouse/tmc/issues/8)
+- [ ] A bundled example mod pack and a short how-to, to show the mods system off (https://github.com/lorencouse/muos-rg35xx-sp-picori/issues/2)
 
 ## Before the PortMaster PR
 
@@ -391,7 +397,7 @@ in software, so anything drawn every frame has to be cheap.
         wait for the next zip, which does that itself); first launch re-extracts in about two
         minutes. Ask for `du -sh /mnt/sdcard/ports/picori/*` only if the folder is still large
         after that, since `rom_data/` alone is a few hundred MB on a 128 KB-cluster card.
-  - [ ] `rom_data/`: 2,789 loose 4 KB pages is the wrong shape for an SD card for the same
+  - [ ] `rom_data/`: 2,789 loose 4 KB pages is the wrong shape for an SD card for the same (https://github.com/lorencouse/tmc/issues/9)
         reason. Pack them into one file (or read straight from `baserom.gba`, which is sitting
         next to it) in a later cut.
 
