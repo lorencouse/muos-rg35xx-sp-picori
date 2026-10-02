@@ -73,6 +73,12 @@ if [ ! -s "$GAMEDIR/config.json" ]; then
   fi
 fi
 
+# Before v2.3.1 the accessibility cues (footstep, enemy-radar and wall tones) shipped on; switch them off once.
+if [ ! -f "$GAMEDIR/conf/.a11y" ]; then
+  sed -i 's/\("a11y_[a-z]*":[[:space:]]*\)true/\1false/g' "$GAMEDIR/config.json"
+  touch "$GAMEDIR/conf/.a11y"
+fi
+
 # Settings-menu text scale, 0.5-2.0 (1.0 at 640x480, 1.5 at 1280x720).
 ui=$(( DISPLAY_WIDTH * 10 / 640 < DISPLAY_HEIGHT * 10 / 480 ? DISPLAY_WIDTH * 10 / 640 : DISPLAY_HEIGHT * 10 / 480 ))
 [ "$ui" -lt 5 ] && ui=5

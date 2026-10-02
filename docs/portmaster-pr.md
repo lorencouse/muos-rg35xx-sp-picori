@@ -86,6 +86,12 @@ Non-standard launcher lines, and why:
   panels, `aspect_mode` pixel_perfect: the port opens its window at
   240x160 x `window_scale` before going fullscreen, and a 1280x720 Knulli
   and an R36S got a postage-stamp window at scale 1.
+- The `conf/.a11y` block: up to v2.3.0 `config.default.json` shipped the
+  port's accessibility cues on (footstep, enemy-radar and wall tones), which
+  players reported as random beeping (lorencouse/tmc#11). Because an update
+  keeps `config.json`, one `sed` switches the five `a11y_*` keys off for
+  existing installs, and the marker file makes it run once, so cues turned
+  back on in the settings menu stay on.
 - `TMC_UI_SCALE` from the panel size: the port otherwise sizes its settings
   menu text from the pre-fullscreen window, unreadable at 1280x720.
 - `SDL3SHIM_SDL2_VIDEODRIVER` / `SDL3SHIM_SDL2_AUDIODRIVER`: the shim's own way
