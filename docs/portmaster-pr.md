@@ -12,19 +12,54 @@ in-game saves carry over.
 ## Steps
 
 1. Build and check the zip: `./build.sh <version>` (CI does the same on a
-   `v*` tag and attaches `picori.zip` to the release).
-2. Fork PortMaster-New, disable GitHub Actions in the fork's settings, clone
-   it with a sparse checkout (their README links JeodC's gist), and run
-   `tools/prepare_repo.sh` from its root.
+   `v*` tag and attaches `picori.zip` to the release). To stage exactly what
+   players download, put the release asset at `dist/<version>/picori.zip`
+   instead: `gh release download v<version> -p picori.zip -O dist/<version>/picori.zip --clobber`.
+   CI builds its own shim from the same bmdhacks/SDL commit, so the release
+   zip's `libSDL3.so.0` is not byte-identical to a local build.
+2. Fork PortMaster-New and disable GitHub Actions in the fork's settings.
+   Clone it sparse, with only `ports/picori/` from the ports tree (the full
+   tree is about 1400 ports):
+
+   ```
+   git clone --filter=blob:none --no-checkout https://github.com/<you>/PortMaster-New.git pm
+   cd pm
+   git sparse-checkout init --no-cone
+   printf '/*\n!/ports/*/\n/ports/picori/\n' | git sparse-checkout set --stdin --no-cone
+   git checkout main
+   mkdir -p ports
+   tools/prepare_repo.sh
+   ```
+
+   Without the `/ports/picori/` line, `git add ports/picori` refuses the
+   files as outside the sparse checkout. `prepare_repo.sh` calls `wget`,
+   which macOS lacks (`brew install wget`), and its `build_data.py` step
+   fails if `ports/` does not exist.
 3. `tools/stage-portmaster.sh <version> <checkout>` unpacks the zip into
    `ports/picori/` in the layout the template asks for:
    `port.json`, `README.md`, `screenshot.png`, `cover.png`, `gameinfo.xml`,
-   `Legend of Zelda - The Minish Cap.sh`, `picori/`.
+   `Legend of Zelda - The Minish Cap.sh`, `picori/`. It sets the script and
+   binary to 644, as PortMaster-New commits them; the launcher sets the
+   binary's exec bit itself.
 4. In the checkout: `python3 tools/build_release.py --do-check`. Fix anything
-   it flags. No file here is over 90 MB, so `build_data.py` is not needed.
-5. Commit on a branch named `picori`, push, open the PR with the text below.
+   it flags; a clean run prints no `Bad port picori` block and exits 0.
+   `python3 tools/build_gameinfo.py` checks `gameinfo.xml` the same way. No
+   file here is over 90 MB, so `build_data.py` is not needed.
+5. `git checkout -b picori`, `git add ports/picori`, and check
+   `git diff --cached --summary` shows every file as `create mode 100644`.
+   Commit, push, open the PR with the text below.
 6. Post the testing thread text (`port/testing_thread.txt`) with the zip link
    in `#testing-n-dev` if that has not happened for this version.
+
+### Rehearsal, 2026-10-01
+
+Steps 1 to 5 run against the v2.3.1 release zip and PortMaster-New
+`238fb27a`, without the push or the PR: `build_release.py --do-check` exits 0
+with `New: 1, Broken: 0` and no warnings, `build_gameinfo.py` is clean, the
+names `picori` and `Legend of Zelda - The Minish Cap.sh` belong to no other
+port, `screenshot.png` and `cover.png` are 640x480, and the files use LF.
+The one fix it found was the exec bit (step 3). Left for the captain: the
+fork, the push, the PR, and the testing thread post.
 
 ## PR text
 
@@ -120,6 +155,8 @@ Facts to reply with, in your own words:
 ## Still open before the PR
 
 - ArkOS and ROCKNIX runs, from testers; 720x720 if anyone has an RGB30.
+  PortMaster-New's `AGENTS.md` also lists dArkOS as a required test, though
+  the PR template does not.
 - A longer play session on the SP for audio dropouts and autosave hitching.
   Measured so far: 55 fps drawn at 60 tps in the Minish Woods with a text box
   up, through the shim's GLES2 renderer.

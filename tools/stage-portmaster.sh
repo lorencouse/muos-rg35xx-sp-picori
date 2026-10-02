@@ -17,7 +17,9 @@ DEST="$PM/ports/picori"
 rm -rf "$DEST" && mkdir -p "$DEST"
 unzip -q "$ZIP" -d "$DEST"
 find "$DEST" -name '.DS_Store' -delete
-chmod +x "$DEST/Legend of Zelda - The Minish Cap.sh" "$DEST/picori/tmc_pc.aarch64"
+# PortMaster-New commits scripts and binaries 644 (their AGENTS.md); the
+# launcher sets the binary's exec bit itself. The zip carries 755, so drop it.
+chmod 644 "$DEST/Legend of Zelda - The Minish Cap.sh" "$DEST/picori/tmc_pc.aarch64"
 
 # Anything over 90 MB has to be split with their tool; nothing here is, but say so.
 find "$DEST" -type f -size +90M -print | sed 's/^/!! over 90 MB, run tools\/build_data.py on: /'
