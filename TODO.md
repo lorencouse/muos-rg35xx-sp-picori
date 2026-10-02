@@ -29,6 +29,9 @@
   once. Turn them back on in Settings if you use them."
 - [ ] Tag package `v2.3.1` (zip link in `docs/portmaster-pr.md` already points at it), reply on
   https://github.com/lorencouse/tmc/issues/11.
+- [x] PortMaster submission rehearsed on the v2.3.1 zip (`docs/portmaster-pr.md`, "Rehearsal,
+  2026-10-01"): `--do-check` clean; `tools/stage-portmaster.sh` now stages the script and binary
+  644, as PortMaster-New commits them.
 
 ## Release sp10 / v2.3.0 (2026-09-23)
 
