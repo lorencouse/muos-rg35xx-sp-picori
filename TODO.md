@@ -17,6 +17,17 @@
   session on the SP for audio and autosave hitching, the three tester replies,
   the Cebion reply, opening the PR.
 
+## v2.3.1: accessibility cues off (fork #11, 2026-10-01)
+
+- [x] Package: `config.default.json` ships the five `a11y_*` keys false; the launcher turns
+  them off once in an existing `config.json` (`conf/.a11y` marker). Matches upstream
+  999sian/tmc 05c7cafe5 "chore: accessibility cues off by default" (upstream #175, #196).
+- [ ] Fork: flip the same defaults (`port/port_runtime_config.cpp`, the `sCue*` statics in
+  `port/port_a11y_cues.c`) so a config without the keys stays quiet; tag a new sp if the
+  package should pin it.
+- [ ] Tag package `v2.3.1`, update the zip link in `docs/portmaster-pr.md`, reply on
+  https://github.com/lorencouse/tmc/issues/11.
+
 ## Release sp10 / v2.3.0 (2026-09-23)
 
 - Code review of the day's merges (fork a27b4f578^..dcc1099cf plus the package) found ten
