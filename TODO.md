@@ -175,7 +175,8 @@ in software, so anything drawn every frame has to be cheap.
       when there is no battery. Needs a look on the SP screen.
 - [ ] Sleep/wake hardening: audio device back, no hiss (see the adb hiss note above) (https://github.com/lorencouse/tmc/issues/7)
 - [ ] Achievements: RA is compiled out for want of libcurl; dlopen it when present (https://github.com/lorencouse/tmc/issues/8)
-- [ ] A bundled example mod pack and a short how-to, to show the mods system off (https://github.com/lorencouse/muos-rg35xx-sp-picori/issues/2)
+- [x] A bundled example mod pack and a short how-to, to show the mods system off: `picori/mods-off/buttons-gba/`
+      and the "Mods" section of `port/README.md` (https://github.com/lorencouse/muos-rg35xx-sp-picori/issues/2)
 
 ## Before the PortMaster PR
 

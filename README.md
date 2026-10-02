@@ -16,6 +16,7 @@ port/                                   the package, as PortMaster wants it
     config.default.json                 shipped settings, copied to config.json on first launch
     picori.ini                          gptokeyb2 keyboard map
     licenses/
+    mods-off/buttons-gba/               example mod, off; moving it into picori/mods/ turns it on
     tmc_pc.aarch64                      added by build.sh, not in git
     libs.aarch64/libSDL3.so.0           added by build.sh, not in git
 build.sh                                assembles dist/<version>/picori.zip
