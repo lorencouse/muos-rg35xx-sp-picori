@@ -51,6 +51,12 @@ Start + Select closes the game at once, without saving. Save in the game or take
 
 The in-game save (`tmc.sav`), the save states (`state_*.bin`), the config and the extracted assets all live in `ports/picori/`. Updating the port through PortMaster keeps your settings. Deleting the port folder removes them; copying the folder to another card keeps them.
 
+## Mods
+
+The game loads every folder inside `ports/picori/mods/` at launch. A mod replaces some of the game's graphics or data; it adds no code. The port ships one example, off: `ports/picori/mods-off/buttons-gba/` redraws the A, B and R prompts in the game and the L and R tabs in the pause menu as GBA buttons. To turn it on, make a `mods` folder in `ports/picori/` and move `buttons-gba` into it. To turn it off, move it back out. Two mods that change the same graphics do not mix: the folder whose name sorts first wins. An update puts a fresh copy in `mods-off/` and leaves `mods/` alone.
+
+To make your own, start from the template and walkthrough in [`mods/example-mod/README.md`](https://github.com/lorencouse/tmc/blob/rg35xx-sp-audio-ui/mods/example-mod/README.md) in the fork. If a mod does not apply, `ports/picori/log.txt` lists the files each mod loaded, as lines starting with `[MOD]`, and says what went wrong.
+
 ## Known issues
 
 - The first launch after copying the ROM spends some seconds extracting assets before anything is drawn. Later launches show the Nintendo logo within a few seconds.
