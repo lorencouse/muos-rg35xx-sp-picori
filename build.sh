@@ -20,8 +20,8 @@ STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 
 TMC_REPO="lorencouse/tmc"
-TMC_TAG_PINNED="v0.8.3-sp10"
-TMC_SHA256_PINNED="024ff1fc880663aee7da3df6f4d020934459f29583069fd8064213aa7163d0f2"
+TMC_TAG_PINNED="v0.8.3-sp11"
+TMC_SHA256_PINNED="6fee7ea5da4cb6bf8808c4da76310dc2558ac1c65777fcbb03dd3da4a7b14ca3"
 TMC_TAG="${TMC_TAG:-$TMC_TAG_PINNED}"
 TMC_ASSET="tmc-multi-linux-arm64-${TMC_TAG}.tar.gz"
 # The pinned hash belongs to the pinned tag; another tag is checked only if
