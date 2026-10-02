@@ -22,10 +22,12 @@
 - [x] Package: `config.default.json` ships the five `a11y_*` keys false; the launcher turns
   them off once in an existing `config.json` (`conf/.a11y` marker). Matches upstream
   999sian/tmc 05c7cafe5 "chore: accessibility cues off by default" (upstream #175, #196).
-- [ ] Fork: flip the same defaults (`port/port_runtime_config.cpp`, the `sCue*` statics in
-  `port/port_a11y_cues.c`) so a config without the keys stays quiet; tag a new sp if the
-  package should pin it.
-- [ ] Tag package `v2.3.1`, update the zip link in `docs/portmaster-pr.md`, reply on
+- [x] Fork: same defaults flipped (lorencouse/tmc#12), tagged `v0.8.3-sp11`; build.sh pins
+  its tmc_pc (SHA-256 6fee7ea5...).
+- Release note: "Fixes random beeping (lorencouse/tmc#11): the accessibility sound cues
+  (footsteps, enemy radar, wall tones) are now off by default, and an update switches them off
+  once. Turn them back on in Settings if you use them."
+- [ ] Tag package `v2.3.1` (zip link in `docs/portmaster-pr.md` already points at it), reply on
   https://github.com/lorencouse/tmc/issues/11.
 
 ## Release sp10 / v2.3.0 (2026-09-23)
