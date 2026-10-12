@@ -126,7 +126,8 @@ Non-standard launcher lines, and why:
   players reported as random beeping (lorencouse/tmc#11). Because an update
   keeps `config.json`, one `sed` switches the five `a11y_*` keys off for
   existing installs, and the marker file makes it run once, so cues turned
-  back on in the settings menu stay on.
+  back on in the settings menu stay on. It edits only when a cue is on, and
+  first copies the file to `config.json.a11y.bak`.
 - `TMC_UI_SCALE` from the panel size: the port otherwise sizes its settings
   menu text from the pre-fullscreen window, unreadable at 1280x720.
 - `SDL3SHIM_SDL2_VIDEODRIVER` / `SDL3SHIM_SDL2_AUDIODRIVER`: the shim's own way
