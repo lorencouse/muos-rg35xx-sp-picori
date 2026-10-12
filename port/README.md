@@ -25,7 +25,7 @@ Thanks to [999sian](https://github.com/999sian/tmc) and the Project Picori contr
 
 The settings menu opens on whichever button your firmware reports as the controller's Guide button: Menu on muOS and Knulli, R3 on the R36S under AmberELEC. It is a handheld menu, one group of settings at a time: D-pad moves, A opens or toggles a row, B backs out and closes it from the top level, L1 and R1 step through the groups. The footer lists the buttons. The launcher sizes its text from the panel, so nothing in it needs a mouse or a restart.
 
-The port's accessibility cues (footstep ticks, an enemy-radar ping and wall-bump buzzes, meant for blind players) are off. Before v2.3.1 they shipped on and sounded like random beeping while walking; the first launch of v2.3.1 or later switches them off once, keeping the previous settings as `config.json.a11y.bak`. Turn them back on in the settings menu if you want them.
+The port's accessibility cues (footstep ticks, an enemy-radar ping and wall-bump buzzes, meant for blind players) are off. Before v2.3.1 they shipped on and sounded like random beeping while walking; the first launch of v2.3.1 or later switches them off once. Turn them back on in the settings menu if you want them.
 
 ## Screen
 
